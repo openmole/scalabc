@@ -48,7 +48,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     val Wt = DenseMatrix.eye[Double](simulations.length)
     Wt(0, ::) := weightsVector
     val sumwt2 = weightsVector.toArray.foldLeft(0.0)(_ + math.pow(_, 2))
-    val C = (M.t * V * M - Wt * M.t * Wt * M) * (1 / (1 - sumwt2))
+    val C = (M.t * V * M - (Wt * M).t * Wt * M) * (1 / (1 - sumwt2))
     val Cb = Array.fill(C.rows, C.rows)(0.0)
     for (r <- 0 until C.rows) {
       Cb(r).update(r, C(r, r))
