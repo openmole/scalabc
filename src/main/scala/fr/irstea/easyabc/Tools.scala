@@ -1,7 +1,8 @@
 package fr.irstea.easyabc
 
-import breeze.linalg.DenseMatrix
-import scala.util.Random
+import breeze.linalg._
+import breeze.linalg.{sum => msum}
+import breeze.numerics.sqrt
 import org.apache.commons.math3.random.RandomGenerator
 
 /*
@@ -56,4 +57,24 @@ object Tools {
     aa
   }
 
+  def covarianceWeighted(data: DenseMatrix[Double], weights: DenseVector[Double]) = {
+    val m = data.copy
+    for (i <- 0 until data.cols) {
+      m(::, i) := m(::, i) :* weights
+    }
+    val center = msum(m, Axis._0)
+    var centerMat = center.copy
+    for (i <- 1 until data.rows) {
+      centerMat = DenseMatrix.vertcat(centerMat, center)
+    }
+    val x: DenseMatrix[Double] = data - centerMat
+    for (i <- 0 until x.cols) {
+      x(::, i) := x(::, i) :* sqrt(weights)
+    }
+    val square = breeze.generic.UFunc {
+      (d: Double) => math.pow(d, 2)
+    }
+    val w: DenseVector[Double] = square(weights)
+    (x.t * x) / (1 - w.sum)
+  }
 }
