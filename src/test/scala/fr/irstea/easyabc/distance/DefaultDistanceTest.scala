@@ -27,6 +27,6 @@ class DefaultDistanceTest extends FunSuite {
   test("distance") {
     val target = Seq(0.0,10.0)
     val stats = Seq(-1.0,9.0)
-    assert(new DefaultDistance(target).distance(stats) == 2)
+    assert(new DefaultDistance(target).distance(stats) === 2)
   }
 }
