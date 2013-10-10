@@ -57,6 +57,7 @@ object Tools {
   /**
    * Computes the estimated weighted covariance matrix.
    * The code has been written from the implementation of the function cov.wt in R 2.15.2.
+   * The weights are not renormalized.
    */
   def covarianceWeighted(data: DenseMatrix[Double], weights: DenseVector[Double]) = {
     val m = data.copy
