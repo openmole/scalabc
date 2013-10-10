@@ -30,6 +30,7 @@ class ToolsTest extends FunSuite {
     val xy = DenseMatrix((1 to 10).toArray.map(_.toDouble), Array.concat((1 to 3).toArray, (5 to 8).toArray.reverse, (8 to 10).toArray).map(_.toDouble)).t
     val w1 = DenseVector(0.0, 0.0, 0.0, 0.2, 0.2, 0.2, 0.2, 0.2, 0.0, 0.0)
     val covmat = covarianceWeighted(xy, w1)
+    // expected result obtained with the function cov.wt in R 2.15.2
     val expected = DenseMatrix((2.5, -0.5), (-0.5, 1.7))
     (covmat.data zip expected.data).map {
       case (x1, x2) => math.abs(x1 - x2) <= 0.001

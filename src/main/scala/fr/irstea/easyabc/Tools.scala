@@ -25,9 +25,6 @@ object Tools {
 
   /**
    * Pick randomly a theta according to their associated weights. The weights are renormalized in the method.
-   * @param thetas
-   * @param rng
-   * @return
    */
   def pickTheta(thetas: Seq[WeightedSimulation])(implicit rng: RandomGenerator): WeightedSimulation = {
     val rand = rng.nextDouble()
@@ -57,17 +54,20 @@ object Tools {
     aa
   }
 
+  /**
+   * Computes the estimated weighted covariance matrix.
+   * The code has been written from the implementation of the function cov.wt in R 2.15.2.
+   */
   def covarianceWeighted(data: DenseMatrix[Double], weights: DenseVector[Double]) = {
     val m = data.copy
     for (i <- 0 until data.cols) {
       m(::, i) := m(::, i) :* weights
     }
     val center = msum(m, Axis._0)
-    var centerMat = center.copy
-    for (i <- 1 until data.rows) {
-      centerMat = DenseMatrix.vertcat(centerMat, center)
+    val x = DenseMatrix.zeros[Double](data.rows, data.cols)
+    for (i <- 0 until x.rows) {
+      x(i,::) := data(i, ::) :- center
     }
-    val x: DenseMatrix[Double] = data - centerMat
     for (i <- 0 until x.cols) {
       x(::, i) := x(::, i) :* sqrt(weights)
     }
