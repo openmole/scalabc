@@ -4,11 +4,10 @@ import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.model.prior.PriorFunction
 import fr.irstea.easyabc.distance.{DefaultDistance, DistanceFunction}
 import scala.collection.mutable.ArrayBuffer
-import breeze.linalg._
-import fr.irstea.easyabc.Tools._
-import org.apache.commons.math3.distribution.MultivariateNormalDistribution
 import org.apache.commons.math3.random.RandomGenerator
 import scala.Some
+import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
+import breeze.stats.DescriptiveStats
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -33,32 +32,34 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
   var currentStep = 0
 
   def nextTolerance(): Option[Double] = {
-    if (currentStep > tolerances.length) {
+    if (currentStep >= tolerances.length) {
       None
     } else {
       Some(tolerances(currentStep))
     }
   }
 
-  def gaussianWalk(simulations: Seq[WeightedSimulation]): Seq[Double] = {
-    val weightsVector = DenseVector((for (s <- simulations) yield s.weight).toArray)
-    val thetas = simulations.map(_.simulation.theta)
-    val M = array2DToMatrix(simulations.map(_.simulation.theta))
-    val V = diag(weightsVector)
-    val Wt = DenseMatrix.eye[Double](simulations.length)
-    Wt(0, ::) := weightsVector
-    val sumwt2 = weightsVector.toArray.foldLeft(0.0)(_ + math.pow(_, 2))
-    val C = (M.t * V * M - (Wt * M).t * Wt * M) * (1 / (1 - sumwt2))
-    val Cb = Array.fill(C.rows, C.rows)(0.0)
-    for (r <- 0 until C.rows) {
-      Cb(r).update(r, C(r, r))
+  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation]): Seq[WeightedSimulation] = {
+    val nbParam = previouslyAccepted(0).simulation.theta.length
+    val nbParticle = previouslyAccepted.length
+    val nbNewParticle = newAccepted.length
+    val var_array = (0 until nbParam).map(col => DescriptiveStats.variance(previouslyAccepted.map(_.simulation.theta(col))))
+    val multi = var_array.foldLeft(math.pow(1 / math.sqrt(2 * math.Pi), nbParam))((s, t) => s * 1 / math.sqrt(t / 2))
+    val weights = Array.fill(nbParticle)(0.0)
+    for (i <- 0 until nbParticle) {
+      var tab_temp = Array.fill(nbNewParticle)(weights(i) * multi)
+      for (k <- 0 until nbParam) {
+        // TODO tab_temp = tab_temp.map(_ * math.exp(-newAccepted()))
+        // tab_temp=tab_temp*exp(-(as.numeric(param_simulated[,k])-as.numeric(param_previous_step[i,k]))*(as.numeric(param_simulated[,k])-as.numeric(param_previous_step[i,k]))/var_array[k])
+      }
+      // tab_weight_new=tab_weight_new+tab_temp
     }
-    val dist = new MultivariateNormalDistribution(rng, pickTheta(simulations).simulation.theta.toArray, Cb)
-    // TODO check if in bounds?
-    dist.sample()
+    // tab_weight_prior=.compute_weight_prior_tab(param_simulated,prior)
+    // tab_weight_new=tab_weight_prior/tab_weight_new
+    for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / weights.sum)
   }
 
-  def apply(model: Model, useSeed: Boolean=false, prior: Seq[PriorFunction[Double]], nbSimus: Int, distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget)) = {
+  def apply(model: Model, useSeed: Boolean = false, prior: Seq[PriorFunction[Double]], nbSimus: Int, distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget), particleMover: ParticleMover = new JabotMoving()) = {
     currentStep = 0
     var tolerance = nextTolerance()
     var accepted: Seq[WeightedSimulation] = Nil
@@ -71,7 +72,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
         if (currentStep == 0) {
           theta = for (p <- prior) yield p.value()
         } else {
-          theta = gaussianWalk(accepted)
+          theta = particleMover.move(accepted)
         }
         val summaryStats = model.apply(theta, if (useSeed) Some(currentSeed) else None)
         val distance = distanceFunction.distance(summaryStats)
@@ -84,17 +85,18 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
       val distanceMax: Double = newAccepted.foldLeft(0.0)(_ max _.distance)
       // TODO fonction computeWeights
       // TODO prendre une meilleure formule de calcul de poids
-      var weights: Seq[Double] = Nil
-      if (currentStep == 0) {
-        weights = Array.fill(nbSimus)(1 / nbSimus.toDouble)
-      } else {
-        weights = for (s <- newAccepted) yield 1 - math.pow(s.distance / distanceMax, 2)
-      }
+      val weights: Seq[Double] =
+        if (currentStep == 0) {
+          Array.fill(nbSimus)(1 / nbSimus.toDouble)
+        } else {
+          for (s <- newAccepted) yield 1 - math.pow(s.distance / distanceMax, 2)
+        }
       val sumWeights = weights.sum
       accepted = for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)
       // go to the next tolerance
       currentStep += 1
       tolerance = nextTolerance()
+      println("Accepted at the end of iteration " + currentStep + " : " + accepted.mkString("\n"))
       // TODO écrire les fichiers
     }
 

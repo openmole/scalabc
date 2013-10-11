@@ -20,6 +20,7 @@ package fr.irstea.easyabc
 import fr.irstea.easyabc.model.examples.ToyModel
 import fr.irstea.easyabc.model.prior.Uniform
 import org.apache.commons.math3.random.MersenneTwister
+import breeze.linalg.DenseMatrix
 
 object Test extends App {
 
@@ -30,4 +31,5 @@ object Test extends App {
   println(model.apply(Seq(2.0, 3.0)))
   val abc = new Beaumont(tolerances = Seq(5, 1), summaryStatsTarget = Seq(5, 5))
   abc.apply(model = model, prior = Seq(new Uniform(0.0, 10.0),new Uniform(0.0, 10.0)), nbSimus = 10)
+
 }
