@@ -117,7 +117,6 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
           // following steps
           computeWeights(accepted, newAccepted, prior)
         }
-      println(weights)
       val sumWeights = weights.sum
       accepted = for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)
       // go to the next tolerance
