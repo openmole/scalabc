@@ -33,7 +33,7 @@ class ToolsTest extends FunSuite {
     // expected result obtained with the function cov.wt in R 2.15.2
     val expected = DenseMatrix((2.5, -0.5), (-0.5, 1.7))
     (covmat.data zip expected.data).map {
-      case (x1, x2) => math.abs(x1 - x2) <= 0.001
+      case (x1, x2) => assert(math.abs(x1 - x2) <= 0.001)
     }
   }
 }
