@@ -1,6 +1,6 @@
 package fr.irstea.easyabc.model.prior
 
-import breeze.stats.distributions.{Uniform => BreezeUniform}
+import org.apache.commons.math3.random.{RandomDataGenerator, RandomGenerator}
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -19,8 +19,10 @@ import breeze.stats.distributions.{Uniform => BreezeUniform}
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Uniform(val min: Double, val max: Double) extends PriorFunction[Double] {
-  val uniform = BreezeUniform(min, max)
+class Uniform(val min: Double, val max: Double)(implicit rng: RandomGenerator) extends PriorFunction[Double] {
+  val rdg = new RandomDataGenerator(rng)
 
-  def value(): Double = uniform.sample()
+  def value(): Double = rdg.nextUniform(min,max)
+
+  def density(value: Double):Double = 1/(max - min)
 }
