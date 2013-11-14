@@ -26,10 +26,10 @@ object Test extends App {
 
   val model = new ToyModel {}
 
-  implicit val rng = new MersenneTwister(42) //.Random(42)
+  implicit val rng = new MersenneTwister(42)
 
   println(model.apply(Seq(2.0, 3.0)))
-  val abc = new Beaumont(tolerances = Seq(5, 1), summaryStatsTarget = Seq(5, 5))
+  val abc = new Beaumont(tolerances = Seq(5, 1, 0.5), summaryStatsTarget = Seq(5, 5))
   abc.apply(model = model, prior = Seq(new Uniform(0.0, 10.0),new Uniform(0.0, 10.0)), nbSimus = 10)
 
 }

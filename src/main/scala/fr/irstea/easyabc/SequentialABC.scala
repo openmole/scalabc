@@ -1,5 +1,7 @@
 package fr.irstea.easyabc
 
+import fr.irstea.easyabc.model.prior.PriorFunction
+
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -25,4 +27,6 @@ case class WeightedSimulation(simulation: Simulation, weight: Double)
 
 trait SequentialABC {
   def nextTolerance(): Option[Double]
+
+  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double]
 }

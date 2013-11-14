@@ -8,6 +8,8 @@ import org.apache.commons.math3.random.RandomGenerator
 import scala.Some
 import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
 import breeze.stats.DescriptiveStats
+import breeze.linalg.{pow => bpow, DenseVector}
+import breeze.numerics.{exp => bexp}
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -39,24 +41,44 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     }
   }
 
-  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation]): Seq[WeightedSimulation] = {
+  /**
+   * computes particle weights with unidimensional jumps
+   */
+  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
     val nbParticle = previouslyAccepted.length
     val nbNewParticle = newAccepted.length
-    val var_array = (0 until nbParam).map(col => DescriptiveStats.variance(previouslyAccepted.map(_.simulation.theta(col))))
+    val var_array = (0 until nbParam).map(col => 4*DescriptiveStats.variance(previouslyAccepted.map(_.simulation.theta(col))))
     val multi = var_array.foldLeft(math.pow(1 / math.sqrt(2 * math.Pi), nbParam))((s, t) => s * 1 / math.sqrt(t / 2))
-    val weights = Array.fill(nbParticle)(0.0)
+    var weights = DenseVector.zeros[Double](nbNewParticle)
     for (i <- 0 until nbParticle) {
-      var tab_temp = Array.fill(nbNewParticle)(weights(i) * multi)
+      var tab_temp = DenseVector.fill(nbNewParticle)(previouslyAccepted(i).weight * multi)
       for (k <- 0 until nbParam) {
-        // TODO tab_temp = tab_temp.map(_ * math.exp(-newAccepted()))
-        // tab_temp=tab_temp*exp(-(as.numeric(param_simulated[,k])-as.numeric(param_previous_step[i,k]))*(as.numeric(param_simulated[,k])-as.numeric(param_previous_step[i,k]))/var_array[k])
+        val theta_i_k: Double = previouslyAccepted(i).simulation.theta(k)
+        val tmp: DenseVector[Double] = DenseVector(newAccepted.map(_.theta(k) - theta_i_k).toArray)
+        tab_temp = tab_temp :* bexp(-(tmp :* tmp) / var_array(k))
       }
-      // tab_weight_new=tab_weight_new+tab_temp
+      weights = weights + tab_temp
     }
-    // tab_weight_prior=.compute_weight_prior_tab(param_simulated,prior)
-    // tab_weight_new=tab_weight_prior/tab_weight_new
-    for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / weights.sum)
+    val tab_weight_prior = computeWeightsPrior(newAccepted, priors)
+    (tab_weight_prior zip weights.data).map {
+      case (twp: Double, w: Double) => {
+        twp / (w * weights.sum)
+      }
+    }
+  }
+
+  /**
+   * computes particle weights
+   */
+  def computeWeightsPrior(particles: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+    for (particle <- particles.map(_.theta)) yield {
+      var res = 1.0
+      for ((param, prior) <- (particle, priors).zipped) {
+        res *= prior.density(param)
+      }
+      res
+    }
   }
 
   def apply(model: Model, useSeed: Boolean = false, prior: Seq[PriorFunction[Double]], nbSimus: Int, distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget), particleMover: ParticleMover = new JabotMoving()) = {
@@ -83,20 +105,20 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
       }
       // compute weights
       val distanceMax: Double = newAccepted.foldLeft(0.0)(_ max _.distance)
-      // TODO fonction computeWeights
-      // TODO prendre une meilleure formule de calcul de poids
       val weights: Seq[Double] =
         if (currentStep == 0) {
+          // initial step
           Array.fill(nbSimus)(1 / nbSimus.toDouble)
-        } else {
-          for (s <- newAccepted) yield 1 - math.pow(s.distance / distanceMax, 2)
+        } else { // following steps
+          computeWeights(accepted, newAccepted, prior)
         }
+      println(weights)
       val sumWeights = weights.sum
       accepted = for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)
       // go to the next tolerance
       currentStep += 1
       tolerance = nextTolerance()
-      println("Accepted at the end of iteration " + currentStep + " : " + accepted.mkString("\n"))
+      println("\nAccepted at the end of iteration " + currentStep + " :\n" + accepted.mkString("\n"))
       // TODO écrire les fichiers
     }
 
