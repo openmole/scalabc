@@ -10,6 +10,7 @@ import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
 import breeze.stats.DescriptiveStats
 import breeze.linalg.{pow => bpow, DenseVector}
 import breeze.numerics.{exp => bexp}
+import fr.irstea.easyabc.output.{PrinterHandler, Handler}
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -48,7 +49,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     val nbParam = previouslyAccepted(0).simulation.theta.length
     val nbParticle = previouslyAccepted.length
     val nbNewParticle = newAccepted.length
-    val var_array = (0 until nbParam).map(col => 4*DescriptiveStats.variance(previouslyAccepted.map(_.simulation.theta(col))))
+    val var_array = (0 until nbParam).map(col => 4 * DescriptiveStats.variance(previouslyAccepted.map(_.simulation.theta(col))))
     val multi = var_array.foldLeft(math.pow(1 / math.sqrt(2 * math.Pi), nbParam))((s, t) => s * 1 / math.sqrt(t / 2))
     var weights = DenseVector.zeros[Double](nbNewParticle)
     for (i <- 0 until nbParticle) {
@@ -81,7 +82,10 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     }
   }
 
-  def apply(model: Model, useSeed: Boolean = false, prior: Seq[PriorFunction[Double]], nbSimus: Int, distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget), particleMover: ParticleMover = new JabotMoving()) = {
+  def apply(model: Model, useSeed: Boolean = false, prior: Seq[PriorFunction[Double]], nbSimus: Int,
+            distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget),
+            particleMover: ParticleMover = new JabotMoving(),
+            outputHandler: Handler = PrinterHandler) = {
     currentStep = 0
     var tolerance = nextTolerance()
     var accepted: Seq[WeightedSimulation] = Nil
@@ -109,7 +113,8 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
         if (currentStep == 0) {
           // initial step
           Array.fill(nbSimus)(1 / nbSimus.toDouble)
-        } else { // following steps
+        } else {
+          // following steps
           computeWeights(accepted, newAccepted, prior)
         }
       println(weights)
@@ -118,7 +123,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
       // go to the next tolerance
       currentStep += 1
       tolerance = nextTolerance()
-      println("\nAccepted at the end of iteration " + currentStep + " :\n" + accepted.mkString("\n"))
+      outputHandler.handle(currentStep, accepted)
       // TODO écrire les fichiers
     }
 
