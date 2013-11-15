@@ -20,13 +20,12 @@ package fr.irstea.easyabc
 import fr.irstea.easyabc.model.examples.ToyModel
 import fr.irstea.easyabc.model.prior.Uniform
 import org.apache.commons.math3.random.MersenneTwister
-import breeze.linalg.DenseMatrix
 import fr.irstea.easyabc.output.FileOutputHandler
 
 object Test extends App {
 
   // our model to explore
-  val model = new ToyModel {}
+  val model = new ToyModel
 
   // init a RNG
   implicit val rng = new MersenneTwister(42)
@@ -38,7 +37,8 @@ object Test extends App {
   val abc = new Beaumont(tolerances = Seq(5, 1, 0.5), summaryStatsTarget = Seq(5, 5))
   //run the algorithm
   abc.apply(model = model,
-    prior = Seq(new Uniform(0.0, 10.0),new Uniform(0.0, 10.0)),
+    useSeed = true,
+    prior = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
     nbSimus = 10,
     outputHandler = new FileOutputHandler("beaumont_output_") // remove this argument for writing the output on the console
   )
