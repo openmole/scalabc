@@ -20,23 +20,29 @@ package fr.irstea.easyabc.model.examples
 import fr.irstea.easyabc.model.Model
 import java.io.{FileWriter, File}
 import scala.io.Source
+import sys.process._
 
 class TraitModel extends Model {
 
-  def apply(thetas: Seq[Double], seed: Option[Int]): Seq[Double] = {
-    val file1 = new File("./input")
-    val writer = new FileWriter(file1)
-    writer.write(1 + "\n" + thetas(0).toInt + "\n" + thetas.slice(1, thetas.length).mkString("\n") + "\n")
-    writer.close
-    // TODO invoke the model execution
-    //"./trait_model".!!
-    val file = Source.fromFile("./output")
+  def apply(thetas: Seq[Double], seed: Option[Int]=None): Seq[Double] = {
+    val inputFile = new File("./input")
+    val writer = new FileWriter(inputFile)
     try {
-      val data = file.getLines.mkString
+      writer.write(1 + "\n500\n" + thetas.slice(0, 2).mkString("\n")+ "\n1\n" + thetas.slice(2, thetas.length).mkString("\n") + "\n")
+    } finally {
+      writer.close
+    }
+    "./trait_model".!!
+    val outputFile = new File("./output")
+    val outputSource = Source.fromFile(outputFile)
+    try {
+      val data = outputSource.getLines.mkString
       data.split("\\s+").map(_.toDouble)
     } finally {
-      file.close
+      outputSource.close
+      //inputFile.delete
+      outputFile.delete
     }
   }
-
 }
+
