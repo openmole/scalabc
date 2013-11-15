@@ -21,9 +21,9 @@ import fr.irstea.easyabc.model.Model
 import java.io.{FileWriter, File}
 import scala.io.Source
 
-trait TraitModel <: Model {
+class TraitModel extends Model {
 
-  def run(thetas: Array[Double]): Array[Double] = {
+  def apply(thetas: Seq[Double], seed: Option[Int]): Seq[Double] = {
     val file1 = new File("./input")
     val writer = new FileWriter(file1)
     writer.write(1 + "\n" + thetas(0).toInt + "\n" + thetas.slice(1, thetas.length).mkString("\n") + "\n")

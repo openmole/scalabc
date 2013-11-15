@@ -19,7 +19,7 @@ package fr.irstea.easyabc.model.examples
 
 import fr.irstea.easyabc.model.Model
 
-class ToyModel <: Model {
+class ToyModel extends Model {
 
   def apply(thetas: Seq[Double], seed: Option[Int]=None): Seq[Double] = {
     val random = new util.Random(seed match {
