@@ -28,7 +28,7 @@ object Test extends App {
   val toyModel = new ToyModel
 
   // init a RNG
-  implicit val rng = new MersenneTwister(42)
+  implicit val rng = new MersenneTwister(1)
 
   // a test on our model
   println(toyModel.apply(Seq(2.0, 3.0)))
@@ -43,11 +43,10 @@ object Test extends App {
     outputHandler = new FileOutputHandler("beaumont_output_") // remove this argument for writing the output on the console
   )
 
-  val traitModel = new TraitModel
-  // TODO give different seeds to trait
+  val traitModel = new TraitModel(500, 1)
 
   // a test on our model
-  println(traitModel.apply(Seq(500, 4, 1, 1, 0.5, -0.1)))
+  println(traitModel.apply(Seq(4, 1, 0.5, -0.1)))
 
   // initialization of Beaumont algorithm
   val abcTrait = new Beaumont(tolerances = Seq(8, 5, 2), summaryStatsTarget = Seq(100,2.5,20,30000))
