@@ -22,13 +22,27 @@ import java.io.{FileWriter, File}
 import scala.io.Source
 import sys.process._
 
-class TraitModel extends Model {
+/**
+ * This model is drawn from Jabot (2010) A stochastic dispersal-limited trait-based model of community dynamics. Journal
+ * of Theoretical Biology, 262, 650-661.  It represents the stochastic dynamics of an ecological community where each species
+ * is represented by a set of traits (i.e. characteristics) which determine its competitive ability.
+ * @param J (model parameters) the total number of individuals in the local community
+ * @param ntrait (model parameters) the number of traits used
+ */
+class TraitModel(val J: Int = 500, val ntrait: Int = 1) extends Model {
 
-  def apply(thetas: Seq[Double], seed: Option[Int]=None): Seq[Double] = {
+  /**
+   *
+   * @param thetas the model parameters (I,A,h,sigma)
+   * @param seed
+   * @return four summary statistics: the species richness of the community ‘S’, its Shannon's index ‘H’,
+   *         the mean of the trait value among individuals ‘MTV’ and the skewness of the trait value distribution ‘STV’
+   */
+  def apply(thetas: Seq[Double], seed: Option[Int] = None): Seq[Double] = {
     val inputFile = new File("./input")
     val writer = new FileWriter(inputFile)
     try {
-      writer.write(1 + "\n500\n" + thetas.slice(0, 2).mkString("\n")+ "\n1\n" + thetas.slice(2, thetas.length).mkString("\n") + "\n")
+      writer.write(1 + "\n" + J + "\n" + thetas.slice(0, 2).mkString("\n") + "\n" + ntrait + "\n" + thetas.slice(2, thetas.length).mkString("\n") + "\n")
     } finally {
       writer.close
     }
@@ -40,7 +54,7 @@ class TraitModel extends Model {
       data.split("\\s+").map(_.toDouble)
     } finally {
       outputSource.close
-      //inputFile.delete
+      inputFile.delete
       outputFile.delete
     }
   }
