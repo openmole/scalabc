@@ -49,8 +49,7 @@ object Test extends App {
   println(traitModel.apply(Seq(4, 1, 0.5, -0.1)))
 
   // initialization of Beaumont algorithm
-  val abcTrait = new Beaumont(tolerances = Seq(8, 5, 2), summaryStatsTarget = Seq(100,2.5,20,30000))
-  // TODO seems to run indefinitely
+  val abcTrait = new Beaumont(tolerances = Seq(8, 5, 2), summaryStatsTarget = Seq(100, 2.5, 20, 30000))
   //run the algorithm
   abcTrait.apply(model = traitModel,
     useSeed = true,
