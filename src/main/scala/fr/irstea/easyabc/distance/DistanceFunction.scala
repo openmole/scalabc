@@ -18,5 +18,11 @@ package fr.irstea.easyabc.distance
  */
 
 abstract class DistanceFunction(val summaryStatsTarget: Seq[Double]) {
-  def distance(summaryStats: Seq[Double]): Double
+  /**
+   *
+   * @param summaryStats
+   * @param initVariance  min(1, 1/empirical variances)
+   * @return
+   */
+  def distance(summaryStats: Seq[Double], initVariance: Seq[Double]): Double
 }

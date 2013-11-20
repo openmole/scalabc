@@ -3,7 +3,7 @@ package fr.irstea.easyabc
 import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.model.prior.PriorFunction
 import fr.irstea.easyabc.distance.{DefaultDistance, DistanceFunction}
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 import org.apache.commons.math3.random.RandomGenerator
 import scala.Some
 import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
@@ -11,6 +11,7 @@ import breeze.stats.DescriptiveStats
 import breeze.linalg.{pow => bpow, DenseVector}
 import breeze.numerics.{exp => bexp}
 import fr.irstea.easyabc.output.{PrinterHandler, Handler}
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -82,6 +83,20 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     }
   }
 
+  def runSimulations(model: Model, thetas: Seq[Seq[Double]], seeds: Seq[Option[Int]]): Seq[Seq[Double]] = {
+    (thetas zip seeds).map {
+      case (theta, seed) => model.apply(theta, seed)
+    }
+  }
+
+  def selectSimulation(thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]], var_summaryStats: Seq[Double], tolerance: Double): Seq[Simulation] = {
+    val simus: Seq[Simulation] = for ((theta, summaryStat) <- thetas zip summaryStats) yield {
+      new Simulation(theta, summaryStat, distance = (for ((v, ss, sst) <- (var_summaryStats, summaryStat, summaryStatsTarget).zipped) yield v * (ss - sst) * (ss - sst)).sum)
+    }
+    //simus.map(s => println(s.theta+" = "+s.summaryStats+" -> "+s.distance))
+    simus.filter(_.distance < tolerance)
+  }
+
   def apply(model: Model, useSeed: Boolean = false, prior: Seq[PriorFunction[Double]], nbSimus: Int,
             distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget),
             particleMover: ParticleMover = new JabotMoving(),
@@ -89,24 +104,36 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     currentStep = 0
     var tolerance = nextTolerance()
     var accepted: Seq[WeightedSimulation] = Nil
+    var var_summaryStats: Seq[Double] = Nil
+    var currentSeed = 0
     while (tolerance != None) {
-      val newAccepted = ArrayBuffer.empty[Simulation]
-      var currentSeed = 0
-      // TODO run several (nbSimus - newAccepted.size) simulations at a time, for further parallelisation
+      var nbSimulated = 0
+      val newAccepted = ListBuffer.empty[Simulation]
       while (newAccepted.size < nbSimus) {
-        var theta: Seq[Double] = Nil
-        if (currentStep == 0) {
-          theta = for (p <- prior) yield p.value()
+        // we need this amount of accepted simulations to reach nbSimus
+        val remainingSimusForThisStep = nbSimus - newAccepted.size
+        // sampling thetas
+        val thetas = (0 until remainingSimusForThisStep).map(_ => if (currentStep == 0) {
+          for (p <- prior) yield p.value()
         } else {
-          theta = particleMover.move(accepted)
+          particleMover.move(accepted)
+        })
+        // init seeds
+        val seeds = (0 until remainingSimusForThisStep).map(_ => if (useSeed) Some(currentSeed) else None)
+        // running simulations
+        val summaryStats = runSimulations(model, thetas, seeds)
+        // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
+        if (var_summaryStats == Nil) {
+          var_summaryStats = for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
         }
-        val summaryStats = model.apply(theta, if (useSeed) Some(currentSeed) else None)
-        val distance = distanceFunction.distance(summaryStats)
-        if (distance <= tolerance.get) {
-          newAccepted += new Simulation(theta, summaryStats, distance)
+        // selecting the tolerable simulations
+        for (s <- selectSimulation(thetas, summaryStats, var_summaryStats, tolerance.get)) {
+          newAccepted += s
+          //println("nbSimulated:nbAccepted/nbSimus " + nbSimulated + "/" + newAccepted.length + "/" + nbSimus + " - " + s.summaryStats + " -> " + s.distance + " (" + tolerance.get + ")")
         }
-        currentSeed += 1
-      }
+        nbSimulated += thetas.length
+        currentSeed += remainingSimusForThisStep
+      } // until we get nbSimus simulations below the tolerance threshold
       // compute weights
       val distanceMax: Double = newAccepted.foldLeft(0.0)(_ max _.distance)
       val weights: Seq[Double] =
@@ -123,7 +150,6 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
       currentStep += 1
       tolerance = nextTolerance()
       outputHandler.handle(currentStep, accepted)
-      // TODO écrire les fichiers
     }
 
   }

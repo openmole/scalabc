@@ -4,6 +4,7 @@ import fr.irstea.easyabc.WeightedSimulation
 import fr.irstea.easyabc.Tools._
 import breeze.linalg._
 import org.apache.commons.math3.random.{RandomDataGenerator, RandomGenerator}
+import breeze.numerics
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -29,11 +30,14 @@ class JabotMoving extends ParticleMover {
    * @param rng
    * @return
    */
+  // TODO add the option for keeping the particle inside the prior
   def move(simulations: Seq[WeightedSimulation])(implicit rng: RandomGenerator): Seq[Double] = {
     val sd: DenseVector[Double] = diag(covarianceWeighted(array2DToMatrix(simulations.map(_.simulation.theta)), DenseVector((for (s <- simulations) yield s.weight).toArray))) * 2.0
+    val sd2: DenseVector[Double] = numerics.sqrt(sd)
     val paramPicked = pickTheta(simulations).simulation.theta
+    //println("paramPicked: " + paramPicked)
     val rdg = new RandomDataGenerator(rng)
-    (paramPicked zip sd.data).map {
+    (paramPicked zip sd2.data).map {
       case (p, s) => rdg.nextGaussian(p, s)
     }
   }

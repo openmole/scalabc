@@ -17,9 +17,10 @@ package fr.irstea.easyabc.distance
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 class DefaultDistance(summaryStatsTarget: Seq[Double]) extends DistanceFunction(summaryStatsTarget) {
-  def distance(summaryStats: Seq[Double]): Double = {
-    (summaryStats zip summaryStatsTarget).map {
-      case (stat, target) => Math.abs(stat - target)
+
+  def distance(summaryStats: Seq[Double], initVariance: Seq[Double]): Double = {
+    (initVariance, summaryStats, summaryStatsTarget).zipped.map {
+      case (v, ss, sst) => v * (ss - sst) * (ss - sst)
     }.sum
   }
 }
