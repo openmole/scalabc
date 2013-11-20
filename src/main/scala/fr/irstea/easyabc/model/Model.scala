@@ -18,6 +18,6 @@ package fr.irstea.easyabc.model
  */
 
 trait Model {
-     def apply(input: Seq[Double], seed: Option[Int]): Seq[Double]
+  def apply(input: Seq[Double], seed: Option[Int]): Seq[Double]
 
 }

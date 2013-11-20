@@ -67,7 +67,7 @@ object Tools {
     val center = msum(m, Axis._0)
     val x = DenseMatrix.zeros[Double](data.rows, data.cols)
     for (i <- 0 until x.rows) {
-      x(i,::) := data(i, ::) :- center
+      x(i, ::) := data(i, ::) :- center
     }
     for (i <- 0 until x.cols) {
       x(::, i) := x(::, i) :* sqrt(weights)

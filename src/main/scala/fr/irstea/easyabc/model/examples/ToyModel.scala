@@ -21,7 +21,7 @@ import fr.irstea.easyabc.model.Model
 
 class ToyModel extends Model {
 
-  def apply(thetas: Seq[Double], seed: Option[Int]=None): Seq[Double] = {
+  def apply(thetas: Seq[Double], seed: Option[Int] = None): Seq[Double] = {
     val random = new util.Random(seed match {
       case Some(s) => s
       case None => 42

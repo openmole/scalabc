@@ -22,7 +22,7 @@ import org.apache.commons.math3.random.{RandomDataGenerator, RandomGenerator}
 class Uniform(val min: Double, val max: Double)(implicit rng: RandomGenerator) extends PriorFunction[Double] {
   val rdg = new RandomDataGenerator(rng)
 
-  def value(): Double = rdg.nextUniform(min,max)
+  def value(): Double = rdg.nextUniform(min, max)
 
-  def density(value: Double):Double = 1/(max - min)
+  def density(value: Double): Double = 1 / (max - min)
 }

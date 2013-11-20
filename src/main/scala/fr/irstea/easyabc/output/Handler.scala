@@ -19,5 +19,5 @@ import fr.irstea.easyabc.WeightedSimulation
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 trait Handler {
-  def handle(step:Int, accepted: Seq[WeightedSimulation])
+  def handle(step: Int, accepted: Seq[WeightedSimulation])
 }

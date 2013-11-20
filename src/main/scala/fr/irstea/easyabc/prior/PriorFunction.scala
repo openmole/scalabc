@@ -18,5 +18,6 @@ package fr.irstea.easyabc.model.prior
  */
 trait PriorFunction[T] {
   def value(): T
+
   def density(value: T): T
 }
