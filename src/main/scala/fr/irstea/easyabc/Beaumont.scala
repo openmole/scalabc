@@ -83,12 +83,6 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     }
   }
 
-  def runSimulations(model: Model, thetas: Seq[Seq[Double]], seeds: Seq[Option[Int]]): Seq[Seq[Double]] = {
-    (thetas zip seeds).map {
-      case (theta, seed) => model.apply(theta, seed)
-    }
-  }
-
   def selectSimulation(thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]], var_summaryStats: Seq[Double], tolerance: Double): Seq[Simulation] = {
     val simus: Seq[Simulation] = for ((theta, summaryStat) <- thetas zip summaryStats) yield {
       new Simulation(theta, summaryStat, distance = (for ((v, ss, sst) <- (var_summaryStats, summaryStat, summaryStatsTarget).zipped) yield v * (ss - sst) * (ss - sst)).sum)

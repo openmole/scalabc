@@ -1,6 +1,7 @@
 package fr.irstea.easyabc
 
 import fr.irstea.easyabc.model.prior.PriorFunction
+import fr.irstea.easyabc.model.Model
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -29,4 +30,11 @@ trait SequentialABC {
   def nextTolerance(): Option[Double]
 
   def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double]
+
+  def runSimulations(model: Model, thetas: Seq[Seq[Double]], seeds: Seq[Option[Int]]): Seq[Seq[Double]] = {
+    (thetas zip seeds).map {
+      case (theta, seed) => model.apply(theta, seed)
+    }
+  }
+
 }
