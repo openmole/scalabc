@@ -3,7 +3,7 @@ package fr.irstea.easyabc
 import breeze.linalg._
 import breeze.linalg.{sum => msum}
 import breeze.numerics.sqrt
-import org.apache.commons.math3.random.RandomGenerator
+import org.apache.commons.math3.random.{RandomDataGenerator, RandomGenerator}
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -77,5 +77,22 @@ object Tools {
     }
     val w: DenseVector[Double] = square(weights)
     (x.t * x) / (1 - w.sum)
+  }
+
+  /**
+   * Draws a Latin Hypercube Sample from a set of uniform distributions.
+   * @param nbSamples number of samples
+   * @param nbFactors number of factors
+   * @param rng the random number generator used
+   * @return
+   */
+  def lhs(nbSamples: Int, nbFactors: Int)(implicit rng: RandomGenerator): Seq[Seq[Double]] = {
+    val rdg = new RandomDataGenerator(rng)
+    (0 until nbFactors).map {
+      _ =>
+        rdg.nextPermutation(nbSamples, nbSamples).map {
+          i => (i + rng.nextDouble()) / nbSamples
+        }.toSeq
+    }.transpose
   }
 }
