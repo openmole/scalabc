@@ -91,6 +91,20 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     simus.filter(_.distance < tolerance)
   }
 
+  // TODO implementation with Iterator
+  /*def init():Seq[WeightedSimulation] = {
+         Seq.empty[WeightedSimulation]
+  }
+  def step():Seq[WeightedSimulation] = {
+      Seq.empty[WeightedSimulation]
+  }
+
+  def run():Iterator[Seq[WeightedSimulation]] = {
+     Iterator.iterate(init) {
+             _ =>  step
+     }
+  }*/
+
   def apply(model: Model, useSeed: Boolean = false, prior: Seq[PriorFunction[Double]], nbSimus: Int,
             distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget),
             particleMover: ParticleMover = new JabotMoving(),
@@ -113,7 +127,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
           particleMover.move(accepted)
         })
         // init seeds
-        val seeds = (0 until remainingSimusForThisStep).map(_ => if (useSeed) Some(currentSeed) else None)
+        val seeds = (0 until remainingSimusForThisStep).map(seed => if (useSeed) Some(seed + currentSeed) else None)
         // running simulations
         val summaryStats = runSimulations(model, thetas, seeds)
         // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
@@ -145,6 +159,5 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
       tolerance = nextTolerance()
       outputHandler.handle(currentStep, accepted)
     }
-
   }
 }
