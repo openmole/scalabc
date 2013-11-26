@@ -70,19 +70,6 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     }
   }
 
-  /**
-   * computes particle weights
-   */
-  def computeWeightsPrior(particles: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
-    for (particle <- particles.map(_.theta)) yield {
-      var res = 1.0
-      for ((param, prior) <- (particle, priors).zipped) {
-        res *= prior.density(param)
-      }
-      res
-    }
-  }
-
   def selectSimulation(thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]], var_summaryStats: Seq[Double], tolerance: Double): Seq[Simulation] = {
     val simus: Seq[Simulation] = for ((theta, summaryStat) <- thetas zip summaryStats) yield {
       new Simulation(theta, summaryStat, distance = (for ((v, ss, sst) <- (var_summaryStats, summaryStat, summaryStatsTarget).zipped) yield v * (ss - sst) * (ss - sst)).sum)
@@ -105,7 +92,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
      }
   }*/
 
-  def apply(model: Model, useSeed: Boolean = false, prior: Seq[PriorFunction[Double]], nbSimus: Int,
+  def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
             distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget),
             particleMover: ParticleMover = new JabotMoving(),
             outputHandler: Handler = PrinterHandler) = {
@@ -122,12 +109,12 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
         val remainingSimusForThisStep = nbSimus - newAccepted.size
         // sampling thetas
         val thetas = (0 until remainingSimusForThisStep).map(_ => if (currentStep == 0) {
-          for (p <- prior) yield p.value()
+          for (p <- priors) yield p.value()
         } else {
           particleMover.move(accepted)
         })
         // init seeds
-        val seeds = (0 until remainingSimusForThisStep).map(seed => if (useSeed) Some(seed + currentSeed) else None)
+        val seeds = (0 until remainingSimusForThisStep).map(_ + currentSeed)
         // running simulations
         val summaryStats = runSimulations(model, thetas, seeds)
         // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
@@ -150,7 +137,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
           Array.fill(nbSimus)(1 / nbSimus.toDouble)
         } else {
           // following steps
-          computeWeights(accepted, newAccepted, prior)
+          computeWeights(accepted, newAccepted, priors)
         }
       val sumWeights = weights.sum
       accepted = for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)

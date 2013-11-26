@@ -54,6 +54,10 @@ object Tools {
     aa
   }
 
+  def covariance(data: DenseMatrix[Double]) = {
+    covarianceWeighted(data, DenseVector.fill(data.rows)(1.0 / data.rows.toDouble))
+  }
+
   /**
    * Computes the estimated weighted covariance matrix.
    * The code has been written from the implementation of the function cov.wt in R 2.15.2.

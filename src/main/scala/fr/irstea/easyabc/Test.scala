@@ -31,14 +31,21 @@ object Test extends App {
   implicit val rng = new MersenneTwister(1)
 
   // a test on our model
-  println(toyModel.apply(Seq(2.0, 3.0)))
+  println(toyModel.apply(Seq(2.0, 3.0), 1))
+
+  // initialization of Lenormand algorithm
+  val maxToy = new Lenormand(summaryStatsTarget = Seq(5, 5))
+  //run the algorithm
+  maxToy.apply(model = toyModel,
+    priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
+    nbSimus = 10
+  )
 
   // initialization of Beaumont algorithm
   val abcToy = new Beaumont(tolerances = Seq(5, 1, 0.5), summaryStatsTarget = Seq(5, 5))
   //run the algorithm
   abcToy.apply(model = toyModel,
-    useSeed = true,
-    prior = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
+    priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
     nbSimus = 10,
     outputHandler = new FileOutputHandler("beaumont_output_") // remove this argument for writing the output on the console
   )
@@ -46,15 +53,23 @@ object Test extends App {
   val traitModel = new TraitModel(500, 1)
 
   // a test on our model
-  println(traitModel.apply(Seq(4, 1, 0.5, -0.1)))
+  println(traitModel.apply(Seq(4, 1, 0.5, -0.1), 1))
 
   // initialization of Beaumont algorithm
   val abcTrait = new Beaumont(tolerances = Seq(8, 5, 2), summaryStatsTarget = Seq(100, 2.5, 20, 30000))
   //run the algorithm
   abcTrait.apply(model = traitModel,
-    useSeed = true,
-    prior = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
+    priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
     nbSimus = 10,
+    outputHandler = PrinterHandler
+  )
+
+  // initialization of Beaumont algorithm
+  val maxTrait = new Lenormand(summaryStatsTarget = Seq(100, 2.5, 20, 30000))
+  //run the algorithm
+  maxTrait.apply(model = traitModel,
+    priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
+    nbSimus = 20,
     outputHandler = PrinterHandler
   )
 

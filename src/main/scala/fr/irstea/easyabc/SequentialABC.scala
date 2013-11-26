@@ -2,6 +2,9 @@ package fr.irstea.easyabc
 
 import fr.irstea.easyabc.model.prior.PriorFunction
 import fr.irstea.easyabc.model.Model
+import fr.irstea.easyabc.distance.DistanceFunction
+import fr.irstea.easyabc.sampling.ParticleMover
+import fr.irstea.easyabc.output.Handler
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -31,7 +34,25 @@ trait SequentialABC {
 
   def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double]
 
-  def runSimulations(model: Model, thetas: Seq[Seq[Double]], seeds: Seq[Option[Int]]): Seq[Seq[Double]] = {
+  def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
+            distanceFunction: DistanceFunction,
+            particleMover: ParticleMover,
+            outputHandler: Handler)
+
+  /**
+   * computes particle weights
+   */
+  def computeWeightsPrior(particles: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+    for (particle <- particles.map(_.theta)) yield {
+      var res = 1.0
+      for ((param, prior) <- (particle, priors).zipped) {
+        res *= prior.density(param)
+      }
+      res
+    }
+  }
+
+  def runSimulations(model: Model, thetas: Seq[Seq[Double]], seeds: Seq[Int]): Seq[Seq[Double]] = {
     (thetas zip seeds).map {
       case (theta, seed) => model.apply(theta, seed)
     }

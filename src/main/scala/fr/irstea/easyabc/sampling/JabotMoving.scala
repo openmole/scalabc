@@ -30,7 +30,7 @@ class JabotMoving extends ParticleMover {
    * @param rng
    * @return
    */
-  // TODO add the option for keeping the particle inside the prior
+  // TODO add the option for keeping the particle inside the priors
   def move(simulations: Seq[WeightedSimulation])(implicit rng: RandomGenerator): Seq[Double] = {
     val sd: DenseVector[Double] = diag(covarianceWeighted(array2DToMatrix(simulations.map(_.simulation.theta)), DenseVector((for (s <- simulations) yield s.weight).toArray))) * 2.0
     val sd2: DenseVector[Double] = numerics.sqrt(sd)

@@ -38,11 +38,11 @@ class TraitModel(val J: Int = 500, val ntrait: Int = 1) extends Model {
    * @return four summary statistics: the species richness of the community ‘S’, its Shannon's index ‘H’,
    *         the mean of the trait value among individuals ‘MTV’ and the skewness of the trait value distribution ‘STV’
    */
-  def apply(thetas: Seq[Double], seed: Option[Int] = None): Seq[Double] = {
+  def apply(thetas: Seq[Double], seed: Int): Seq[Double] = {
     val inputFile = new File("./input")
     val writer = new FileWriter(inputFile)
     try {
-      writer.write(1 + "\n" + J + "\n" + thetas.slice(0, 2).mkString("\n") + "\n" + ntrait + "\n" + thetas.slice(2, thetas.length).mkString("\n") + "\n")
+      writer.write(seed + "\n" + J + "\n" + thetas.slice(0, 2).mkString("\n") + "\n" + ntrait + "\n" + thetas.slice(2, thetas.length).mkString("\n") + "\n")
     } finally {
       writer.close
     }
