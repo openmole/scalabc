@@ -61,9 +61,9 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     }
   }
 
-  def selectSimulation(thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]], var_summaryStats: Seq[Double], tolerance: Double): Seq[Simulation] = {
+  def selectSimulation(thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]], var_summaryStats: Seq[Double], tolerance: Double, distanceFunction: DistanceFunction): Seq[Simulation] = {
     val simus: Seq[Simulation] = for ((theta, summaryStat) <- thetas zip summaryStats) yield {
-      new Simulation(theta, summaryStat, distance = (for ((v, ss, sst) <- (var_summaryStats, summaryStat, summaryStatsTarget).zipped) yield v * (ss - sst) * (ss - sst)).sum)
+      new Simulation(theta, summaryStat, distance = distanceFunction.distance(summaryStat, var_summaryStats))
     }
     //simus.map(s => println(s.theta + " = " + s.summaryStats + " -> " + s.distance))
     simus.filter(_.distance < tolerance)
@@ -94,7 +94,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
         for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
       )
       // selecting the tolerable simulations
-      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats, tolerance)) {
+      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats, tolerance, distanceFunction)) {
         newAccepted += s
       }
       nbSimulated += thetas.length
