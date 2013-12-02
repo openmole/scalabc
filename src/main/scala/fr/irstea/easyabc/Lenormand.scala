@@ -85,7 +85,7 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
         }
       }.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
       tolNext = accepted.last.simulation.distance
-      new State(0, nbSimus, nbSimus, tolerance, Some(accepted), Some(varSummaryStats))
+      new State(previousState.iteration + 1, nbSimus, nbSimus, tolerance, Some(accepted), Some(varSummaryStats))
     } else {
       // Following steps
       val nbSimusStep = nbSimus - n_alpha
@@ -107,59 +107,5 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
         previousState.varSummaryStats)
     }
   }
-
-  /*override def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
-                     distanceFunction: DistanceFunction,
-                     particleMover: ParticleMover = new JabotMoving()): Iterator[State] = {
-    var currentStep = 0
-    val states = ListBuffer.empty[State]
-    //////////////// Initial step
-    val n_alpha = math.ceil(nbSimus * alpha).toInt
-    val thetas = Tools.lhs(nbSimus, priors.length).map {
-      row =>
-        (row zip priors).map {
-          case (sample, prior) => {
-            val unif = prior.asInstanceOf[Uniform]
-            unif.min + sample * (unif.max - unif.min)
-          }
-        }
-    }
-    // running simulations
-    val summaryStats = runSimulations(model, thetas, 0 until nbSimus)
-    var currentSeed = nbSimus
-    val varSummaryStats = for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
-    var accepted = {
-      for ((t, ss) <- thetas zip summaryStats) yield {
-        new WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / nbSimus.toDouble)
-      }
-    }.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
-    var tolNext = accepted.last.simulation.distance
-    states += new State(currentStep, nbSimus, nbSimus, tolNext, Some(accepted), Some(varSummaryStats))
-    //yield previousState
-    ///////////////// Following steps
-    var pAcc = pAccMin + 1
-    val nbSimusStep = nbSimus - n_alpha
-    while (pAcc > pAccMin) {
-      currentStep += 1
-      val thetas = (0 until nbSimusStep).map(_ => particleMover.move(accepted))
-      // init seeds
-      val seeds = (0 until nbSimusStep).map(_ + currentSeed)
-      currentSeed += nbSimusStep
-      // running simulations
-      val summaryStats = runSimulations(model, thetas, seeds)
-      val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats))).toSeq
-      val weights = computeWeights(accepted, newSimulations, priors)
-      val newAccepted = {
-        for ((s, w) <- newSimulations zip weights if s.distance <= tolNext) yield new WeightedSimulation(s, w / weights.sum)
-      }
-      pAcc = newAccepted.length.toDouble / nbSimusStep
-      accepted = (accepted ++ newAccepted).sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
-      states += new State(currentStep, nbSimusStep, states.last.nbSimulatedTotal + nbSimusStep, tolNext,
-        Some(accepted),
-        Some(varSummaryStats))
-      tolNext = accepted.last.simulation.distance
-    }
-    states.iterator
-  }*/
 
 }

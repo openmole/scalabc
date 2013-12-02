@@ -32,8 +32,6 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])(implicit rng: RandomGenerator) extends SequentialABC {
 
 
-  var currentStep = 0
-
   override def tolerancesIt(): Iterator[Double] = tolerances.iterator
 
   /**
@@ -67,7 +65,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     val simus: Seq[Simulation] = for ((theta, summaryStat) <- thetas zip summaryStats) yield {
       new Simulation(theta, summaryStat, distance = (for ((v, ss, sst) <- (var_summaryStats, summaryStat, summaryStatsTarget).zipped) yield v * (ss - sst) * (ss - sst)).sum)
     }
-    simus.map(s => println(s.theta + " = " + s.summaryStats + " -> " + s.distance))
+    //simus.map(s => println(s.theta + " = " + s.summaryStats + " -> " + s.distance))
     simus.filter(_.distance < tolerance)
   }
 
