@@ -20,57 +20,61 @@ package fr.irstea.easyabc
 import fr.irstea.easyabc.model.examples.{TraitModel, ToyModel}
 import fr.irstea.easyabc.model.prior.Uniform
 import org.apache.commons.math3.random.MersenneTwister
-import fr.irstea.easyabc.output.{PrinterHandler, FileOutputHandler}
+import fr.irstea.easyabc.distance.DefaultDistance
 
 object Test extends App {
 
-  // our model to explore
-  val toyModel = new ToyModel
+  def printState(s: State) = println("#" + s.iteration + " " + s.accepted.getOrElse(List()).length + "/"
+    + s.nbSimulatedThisStep + "/" + s.nbSimulatedTotal + " tol=" + s.tolerance + "\n"
+    + s.accepted.getOrElse(List()).mkString("\n"))
 
   // init a RNG
   implicit val rng = new MersenneTwister(1)
 
+  // our model to explore
+  val toyModel = new ToyModel
   // a test on our model
-  println(toyModel.apply(Seq(2.0, 3.0), 1))
+  //println(toyModel.apply(Seq(2.0, 3.0), 1))
 
   // initialization of Lenormand algorithm
   val maxToy = new Lenormand(summaryStatsTarget = Seq(5, 5))
   //run the algorithm
   maxToy.apply(model = toyModel,
     priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
-    nbSimus = 10
-  )
+    nbSimus = 10,
+    distanceFunction = new DefaultDistance(maxToy.summaryStatsTarget)
+  ).foreach(printState)
 
   // initialization of Beaumont algorithm
-  val abcToy = new Beaumont(tolerances = Seq(5, 1, 0.5), summaryStatsTarget = Seq(5, 5))
-  //run the algorithm
+  var abcToy = new Beaumont(tolerances = Seq(5, 1, 0.5), summaryStatsTarget = Seq(5, 5))
   abcToy.apply(model = toyModel,
     priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
     nbSimus = 10,
-    outputHandler = new FileOutputHandler("beaumont_output_") // remove this argument for writing the output on the console
-  )
+    distanceFunction = new DefaultDistance(abcToy.summaryStatsTarget)
+  ).foreach(printState)
 
+  // an other model
   val traitModel = new TraitModel(500, 1)
-
   // a test on our model
-  println(traitModel.apply(Seq(4, 1, 0.5, -0.1), 1))
+  //println(traitModel.apply(Seq(4, 1, 0.5, -0.1), 1))
 
   // initialization of Beaumont algorithm
-  val abcTrait = new Beaumont(tolerances = Seq(8, 5, 2), summaryStatsTarget = Seq(100, 2.5, 20, 30000))
+  val abcTrait = new Beaumont(tolerances = Seq(80, 50, 20), summaryStatsTarget = Seq(100, 2.5, 20, 30000))
   //run the algorithm
   abcTrait.apply(model = traitModel,
     priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
-    nbSimus = 10,
-    outputHandler = PrinterHandler
-  )
+    nbSimus = 5,
+    distanceFunction = new DefaultDistance(abcTrait.summaryStatsTarget)
+  ).foreach(printState)
 
-  // initialization of Beaumont algorithm
+
+  // initialization of Lenormand algorithm
   val maxTrait = new Lenormand(summaryStatsTarget = Seq(100, 2.5, 20, 30000))
   //run the algorithm
   maxTrait.apply(model = traitModel,
     priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
     nbSimus = 20,
-    outputHandler = PrinterHandler
+    distanceFunction = new DefaultDistance(maxToy.summaryStatsTarget)
   )
 
 }

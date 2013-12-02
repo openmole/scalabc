@@ -35,7 +35,6 @@ class JabotMoving extends ParticleMover {
     val sd: DenseVector[Double] = diag(covarianceWeighted(array2DToMatrix(simulations.map(_.simulation.theta)), DenseVector((for (s <- simulations) yield s.weight).toArray))) * 2.0
     val sd2: DenseVector[Double] = numerics.sqrt(sd)
     val paramPicked = pickTheta(simulations).simulation.theta
-    //println("paramPicked: " + paramPicked)
     val rdg = new RandomDataGenerator(rng)
     (paramPicked zip sd2.data).map {
       case (p, s) => rdg.nextGaussian(p, s)

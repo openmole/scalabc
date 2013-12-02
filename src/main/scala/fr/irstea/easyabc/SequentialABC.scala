@@ -3,8 +3,7 @@ package fr.irstea.easyabc
 import fr.irstea.easyabc.model.prior.PriorFunction
 import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.distance.DistanceFunction
-import fr.irstea.easyabc.sampling.ParticleMover
-import fr.irstea.easyabc.output.Handler
+import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -29,15 +28,32 @@ case class Simulation(theta: Seq[Double],
 
 case class WeightedSimulation(simulation: Simulation, weight: Double)
 
+case class State(iteration: Int, nbSimulatedThisStep: Int, nbSimulatedTotal: Int, tolerance: Double, accepted: Option[Seq[WeightedSimulation]], varSummaryStats: Option[Seq[Double]])
+
 trait SequentialABC {
-  def nextTolerance(): Option[Double]
+
+  def tolerancesIt(): Iterator[Double]
 
   def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double]
 
+  def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
+           previousState: State,
+           distanceFunction: DistanceFunction,
+           particleMover: ParticleMover): State
+
   def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
             distanceFunction: DistanceFunction,
-            particleMover: ParticleMover,
-            outputHandler: Handler)
+            particleMover: ParticleMover = new JabotMoving()): Iterator[State] = {
+    var previousState = new State(0, 0, 0, 0, None, None)
+    tolerancesIt().map {
+      tol =>
+        previousState = step(model, priors, nbSimus, tol, previousState, distanceFunction, particleMover)
+        previousState
+    }
+    // prettier but the last tolerance is skipped
+    // val tolerances = tolerancesIt()
+    //Iterator.iterate(new State(0, 0, 0, 0, None, None))(step(model, priors, nbSimus, tolerances.next, _, distanceFunction, particleMover)) takeWhile (_ => tolerances.hasNext)
+  }
 
   /**
    * computes particle weights

@@ -2,13 +2,13 @@ package fr.irstea.easyabc
 
 import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.model.prior.{Uniform, PriorFunction}
-import fr.irstea.easyabc.distance.{DefaultDistance, DistanceFunction}
+import fr.irstea.easyabc.distance.DistanceFunction
 import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
-import fr.irstea.easyabc.output.{PrinterHandler, Handler}
 import org.apache.commons.math3.random.RandomGenerator
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import breeze.linalg._
 import fr.irstea.easyabc.Tools._
+import scala.collection.mutable.ListBuffer
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -28,9 +28,9 @@ import fr.irstea.easyabc.Tools._
  */
 class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summaryStatsTarget: Seq[Double])(implicit rng: RandomGenerator) extends SequentialABC {
 
-  var currentStep = 0
+  override def tolerancesIt(): Iterator[Double] = List(0.0).iterator
 
-  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+  override def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
     val covmat: DenseMatrix[Double] = covariance(array2DToMatrix(previouslyAccepted.map(_.simulation.theta))) :* 2.0
     val multi = math.exp(-0.5 * nbParam * math.log(2 * math.Pi)) / math.sqrt(math.abs(det(covmat)))
@@ -51,11 +51,18 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     }
   }
 
-  def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
-            distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget),
-            particleMover: ParticleMover = new JabotMoving(),
-            outputHandler: Handler = PrinterHandler) = {
-    currentStep = 0
+  override def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
+                    previousState: State,
+                    distanceFunction: DistanceFunction,
+                    particleMover: ParticleMover): State = {
+    throw new IllegalAccessError("For now, this method should not be called")
+  }
+
+  override def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
+                     distanceFunction: DistanceFunction,
+                     particleMover: ParticleMover = new JabotMoving()): Iterator[State] = {
+    var currentStep = 0
+    val states = ListBuffer.empty[State]
     //////////////// Initial step
     val n_alpha = math.ceil(nbSimus * alpha).toInt
     val thetas = Tools.lhs(nbSimus, priors.length).map {
@@ -68,16 +75,18 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
         }
     }
     // running simulations
-    val summaryStats = runSimulations(model, thetas, (0 until nbSimus))
+    val summaryStats = runSimulations(model, thetas, 0 until nbSimus)
     var currentSeed = nbSimus
-    val var_summaryStats = for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
+    val varSummaryStats = for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
     var accepted = {
-      for ((t, ss) <- (thetas zip summaryStats)) yield {
-        new WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, var_summaryStats)), weight = 1 / nbSimus.toDouble)
+      for ((t, ss) <- thetas zip summaryStats) yield {
+        new WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / nbSimus.toDouble)
       }
     }.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
+    var tolNext = accepted.last.simulation.distance
+    states += new State(currentStep, nbSimus, nbSimus, tolNext, Some(accepted), Some(varSummaryStats))
+    //yield previousState
     ///////////////// Following steps
-    var tol_next = accepted.last.simulation.distance
     var pAcc = pAccMin + 1
     val nbSimusStep = nbSimus - n_alpha
     while (pAcc > pAccMin) {
@@ -88,20 +97,19 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
       currentSeed += nbSimusStep
       // running simulations
       val summaryStats = runSimulations(model, thetas, seeds)
-      val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, var_summaryStats))).toSeq
+      val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats))).toSeq
       val weights = computeWeights(accepted, newSimulations, priors)
       val newAccepted = {
-        for ((s, w) <- (newSimulations zip weights) if s.distance <= tol_next) yield new WeightedSimulation(s, w / weights.sum)
+        for ((s, w) <- newSimulations zip weights if s.distance <= tolNext) yield new WeightedSimulation(s, w / weights.sum)
       }
       pAcc = newAccepted.length.toDouble / nbSimusStep
       accepted = (accepted ++ newAccepted).sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
-      tol_next = accepted.last.simulation.distance
-      println("pacc = " + pAcc + " tol = " + tol_next)
-      outputHandler.handle(currentStep, accepted)
+      states += new State(currentStep, nbSimusStep, states.last.nbSimulatedTotal + nbSimusStep, tolNext,
+        Some(accepted),
+        Some(varSummaryStats))
+      tolNext = accepted.last.simulation.distance
     }
-
+    states.iterator
   }
-
-  def nextTolerance(): Option[Double] = None
 
 }

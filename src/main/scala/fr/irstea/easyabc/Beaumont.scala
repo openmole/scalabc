@@ -2,15 +2,14 @@ package fr.irstea.easyabc
 
 import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.model.prior.PriorFunction
-import fr.irstea.easyabc.distance.{DefaultDistance, DistanceFunction}
+import fr.irstea.easyabc.distance.DistanceFunction
 import scala.collection.mutable.ListBuffer
 import org.apache.commons.math3.random.RandomGenerator
 import scala.Some
-import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
+import fr.irstea.easyabc.sampling.ParticleMover
 import breeze.stats.DescriptiveStats
 import breeze.linalg.{pow => bpow, DenseVector}
 import breeze.numerics.{exp => bexp}
-import fr.irstea.easyabc.output.{PrinterHandler, Handler}
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 
 /*
@@ -35,18 +34,12 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
 
   var currentStep = 0
 
-  def nextTolerance(): Option[Double] = {
-    if (currentStep >= tolerances.length) {
-      None
-    } else {
-      Some(tolerances(currentStep))
-    }
-  }
+  override def tolerancesIt(): Iterator[Double] = tolerances.iterator
 
   /**
    * computes particle weights with unidimensional jumps
    */
-  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+  override def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
     val nbParticle = previouslyAccepted.length
     val nbNewParticle = newAccepted.length
@@ -74,77 +67,54 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     val simus: Seq[Simulation] = for ((theta, summaryStat) <- thetas zip summaryStats) yield {
       new Simulation(theta, summaryStat, distance = (for ((v, ss, sst) <- (var_summaryStats, summaryStat, summaryStatsTarget).zipped) yield v * (ss - sst) * (ss - sst)).sum)
     }
-    //simus.map(s => println(s.theta+" = "+s.summaryStats+" -> "+s.distance))
+    simus.map(s => println(s.theta + " = " + s.summaryStats + " -> " + s.distance))
     simus.filter(_.distance < tolerance)
   }
 
-  // TODO implementation with Iterator
-  /*def init():Seq[WeightedSimulation] = {
-         Seq.empty[WeightedSimulation]
-  }
-  def step():Seq[WeightedSimulation] = {
-      Seq.empty[WeightedSimulation]
+  override def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
+                    previousState: State,
+                    distanceFunction: DistanceFunction,
+                    particleMover: ParticleMover): State = {
+    var varSummaryStats: Option[Seq[Double]] = previousState.varSummaryStats
+    var nbSimulated = 0
+    val newAccepted = ListBuffer.empty[Simulation]
+    while (newAccepted.size < nbSimus) {
+      // we need this amount of accepted simulations to reach nbSimus
+      val remainingSimusForThisStep = nbSimus - newAccepted.size
+      // sampling thetas
+      val thetas = (0 until remainingSimusForThisStep).map(_ => if (previousState.accepted == None) {
+        for (p <- priors) yield p.value()
+      } else {
+        particleMover.move(previousState.accepted.get)
+      })
+      // init seeds
+      val seeds = (0 until remainingSimusForThisStep).map(_ + previousState.nbSimulatedTotal + nbSimulated)
+      // running simulations
+      val summaryStats = runSimulations(model, thetas, seeds)
+      // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
+      if (varSummaryStats == None) {
+        varSummaryStats = Some(for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance))
+      }
+      // selecting the tolerable simulations
+      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats.get, tolerance)) {
+        newAccepted += s
+      }
+      nbSimulated += thetas.length
+    } // until we get nbSimus simulations below the tolerance threshold
+    // compute weights
+    val weights: Seq[Double] =
+      if (previousState.accepted == None) {
+        // initial step
+        Array.fill(nbSimus)(1 / nbSimus.toDouble)
+      } else {
+        // following steps
+        computeWeights(previousState.accepted.get, newAccepted, priors)
+      }
+    val sumWeights = weights.sum
+    // go to the next tolerance
+    new State(previousState.iteration + 1, nbSimulated, previousState.nbSimulatedTotal + nbSimulated, tolerance,
+      Some(for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)),
+      varSummaryStats)
   }
 
-  def run():Iterator[Seq[WeightedSimulation]] = {
-     Iterator.iterate(init) {
-             _ =>  step
-     }
-  }*/
-
-  def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
-            distanceFunction: DistanceFunction = new DefaultDistance(summaryStatsTarget),
-            particleMover: ParticleMover = new JabotMoving(),
-            outputHandler: Handler = PrinterHandler) = {
-    currentStep = 0
-    var tolerance = nextTolerance()
-    var accepted: Seq[WeightedSimulation] = Nil
-    var var_summaryStats: Seq[Double] = Nil
-    var currentSeed = 0
-    while (tolerance != None) {
-      var nbSimulated = 0
-      val newAccepted = ListBuffer.empty[Simulation]
-      while (newAccepted.size < nbSimus) {
-        // we need this amount of accepted simulations to reach nbSimus
-        val remainingSimusForThisStep = nbSimus - newAccepted.size
-        // sampling thetas
-        val thetas = (0 until remainingSimusForThisStep).map(_ => if (currentStep == 0) {
-          for (p <- priors) yield p.value()
-        } else {
-          particleMover.move(accepted)
-        })
-        // init seeds
-        val seeds = (0 until remainingSimusForThisStep).map(_ + currentSeed)
-        // running simulations
-        val summaryStats = runSimulations(model, thetas, seeds)
-        // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
-        if (var_summaryStats == Nil) {
-          var_summaryStats = for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
-        }
-        // selecting the tolerable simulations
-        for (s <- selectSimulation(thetas, summaryStats, var_summaryStats, tolerance.get)) {
-          newAccepted += s
-          //println("nbSimulated:nbAccepted/nbSimus " + nbSimulated + "/" + newAccepted.length + "/" + nbSimus + " - " + s.summaryStats + " -> " + s.distance + " (" + tolerance.get + ")")
-        }
-        nbSimulated += thetas.length
-        currentSeed += remainingSimusForThisStep
-      } // until we get nbSimus simulations below the tolerance threshold
-      // compute weights
-      val distanceMax: Double = newAccepted.foldLeft(0.0)(_ max _.distance)
-      val weights: Seq[Double] =
-        if (currentStep == 0) {
-          // initial step
-          Array.fill(nbSimus)(1 / nbSimus.toDouble)
-        } else {
-          // following steps
-          computeWeights(accepted, newAccepted, priors)
-        }
-      val sumWeights = weights.sum
-      accepted = for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)
-      // go to the next tolerance
-      currentStep += 1
-      tolerance = nextTolerance()
-      outputHandler.handle(currentStep, accepted)
-    }
-  }
 }
