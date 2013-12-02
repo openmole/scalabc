@@ -73,7 +73,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
                     previousState: State,
                     distanceFunction: DistanceFunction,
                     particleMover: ParticleMover): State = {
-    var varSummaryStats: Option[Seq[Double]] = previousState.varSummaryStats
+    var varSummaryStats: Seq[Double] = Nil
     var nbSimulated = 0
     val newAccepted = ListBuffer.empty[Simulation]
     while (newAccepted.size < nbSimus) {
@@ -90,11 +90,11 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
       // running simulations
       val summaryStats = runSimulations(model, thetas, seeds)
       // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
-      if (varSummaryStats == None) {
-        varSummaryStats = Some(for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance))
-      }
+      varSummaryStats = previousState.varSummaryStats.getOrElse(
+        for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
+      )
       // selecting the tolerable simulations
-      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats.get, tolerance)) {
+      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats, tolerance)) {
         newAccepted += s
       }
       nbSimulated += thetas.length
@@ -112,7 +112,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     // go to the next tolerance
     new State(previousState.iteration + 1, nbSimulated, previousState.nbSimulatedTotal + nbSimulated, tolerance,
       Some(for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)),
-      varSummaryStats)
+      Some(varSummaryStats))
   }
 
 }

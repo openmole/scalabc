@@ -29,9 +29,9 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
 
   override def tolerancesIt(): Iterator[Double] = {
     new Iterator[Double] {
-      def hasNext: Boolean = pAcc > pAccMin
+      def hasNext: Boolean = proportionOfAccepted > pAccMin
 
-      def next(): Double = tolNext
+      def next(): Double = nextTolerance
     }
   }
 
@@ -56,17 +56,18 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     }
   }
 
-  var pAcc = pAccMin + 1
-  var tolNext = 0.0
+  var proportionOfAccepted = pAccMin + 1
+  var nextTolerance = 0.0
 
   override def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
                     previousState: State,
                     distanceFunction: DistanceFunction,
                     particleMover: ParticleMover): State = {
     val n_alpha = math.ceil(nbSimus * alpha).toInt
-    if (previousState.accepted == None) {
-      // Initial step
-      val thetas = Tools.lhs(nbSimus, priors.length).map {
+    val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
+    // sampling thetas and init seeds
+    val (thetas, seeds) = if (previousState.accepted == None)
+      (Tools.lhs(nbSimus, priors.length).map {
         row =>
           (row zip priors).map {
             case (sample, prior) => {
@@ -74,38 +75,35 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
               unif.min + sample * (unif.max - unif.min)
             }
           }
-      }
-      // running simulations
-      val summaryStats = runSimulations(model, thetas, 0 until nbSimus)
-      var currentSeed = nbSimus
-      val varSummaryStats = for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
-      val accepted = {
-        for ((t, ss) <- thetas zip summaryStats) yield {
-          new WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / nbSimus.toDouble)
-        }
-      }.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
-      tolNext = accepted.last.simulation.distance
-      new State(previousState.iteration + 1, nbSimus, nbSimus, tolerance, Some(accepted), Some(varSummaryStats))
+      }, 0 until nbSimus)
+    else ((0 until nbSimusStep).map(_ => particleMover.move(previousState.accepted.get)), (0 until nbSimusStep).map(_ + previousState.nbSimulatedTotal))
+    // running simulations
+    val summaryStats = runSimulations(model, thetas, seeds)
+    // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
+    val varSummaryStats = previousState.varSummaryStats.getOrElse(
+      for (col <- 0 until summaryStatsTarget.length) yield
+        math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
+    )
+    // selecting the simulations
+    val accepted = (if (previousState.accepted == None) {
+      // initial step: all simulations are kept
+      for ((t, ss) <- thetas zip summaryStats) yield
+        new WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / nbSimus.toDouble)
     } else {
-      // Following steps
-      val nbSimusStep = nbSimus - n_alpha
-      val thetas = (0 until nbSimusStep).map(_ => particleMover.move(previousState.accepted.get))
-      // init seeds
-      val seeds = (0 until nbSimusStep).map(_ + previousState.nbSimulatedTotal)
-      // running simulations
-      val summaryStats = runSimulations(model, thetas, seeds)
+      // following steps: computing distances and weights
       val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, previousState.varSummaryStats.get))).toSeq
       val weights = computeWeights(previousState.accepted.get, newSimulations, priors)
+      // keeping only new simulations under tolerance threshold
       val newAccepted = {
         for ((s, w) <- newSimulations zip weights if s.distance <= tolerance) yield new WeightedSimulation(s, w / weights.sum)
       }
-      pAcc = newAccepted.length.toDouble / nbSimusStep
-      val accepted = (previousState.accepted.get ++ newAccepted).sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
-      tolNext = accepted.last.simulation.distance
-      new State(previousState.iteration + 1, nbSimusStep, previousState.nbSimulatedTotal + nbSimusStep, tolerance,
-        Some(accepted),
-        previousState.varSummaryStats)
-    }
+      proportionOfAccepted = newAccepted.length.toDouble / nbSimusStep
+      previousState.accepted.get ++ newAccepted
+    }).sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
+    nextTolerance = accepted.last.simulation.distance
+    new State(previousState.iteration + 1, nbSimusStep, previousState.nbSimulatedTotal + nbSimusStep, tolerance,
+      Some(accepted),
+      Some(varSummaryStats))
   }
 
 }
