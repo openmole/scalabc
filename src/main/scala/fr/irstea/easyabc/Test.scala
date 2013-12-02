@@ -75,6 +75,6 @@ object Test extends App {
     priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
     nbSimus = 20,
     distanceFunction = new DefaultDistance(maxToy.summaryStatsTarget)
-  )
+  ).foreach(printState)
 
 }

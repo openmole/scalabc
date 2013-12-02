@@ -3,12 +3,11 @@ package fr.irstea.easyabc
 import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.model.prior.{Uniform, PriorFunction}
 import fr.irstea.easyabc.distance.DistanceFunction
-import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
+import fr.irstea.easyabc.sampling.ParticleMover
 import org.apache.commons.math3.random.RandomGenerator
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import breeze.linalg._
 import fr.irstea.easyabc.Tools._
-import scala.collection.mutable.ListBuffer
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -28,7 +27,13 @@ import scala.collection.mutable.ListBuffer
  */
 class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summaryStatsTarget: Seq[Double])(implicit rng: RandomGenerator) extends SequentialABC {
 
-  override def tolerancesIt(): Iterator[Double] = List(0.0).iterator
+  override def tolerancesIt(): Iterator[Double] = {
+    new Iterator[Double] {
+      def hasNext: Boolean = pAcc > pAccMin
+
+      def next(): Double = tolNext
+    }
+  }
 
   override def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
@@ -51,14 +56,59 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     }
   }
 
+  var pAcc = pAccMin + 1
+  var tolNext = 0.0
+
   override def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
                     previousState: State,
                     distanceFunction: DistanceFunction,
                     particleMover: ParticleMover): State = {
-    throw new IllegalAccessError("For now, this method should not be called")
+    val n_alpha = math.ceil(nbSimus * alpha).toInt
+    if (previousState.accepted == None) {
+      // Initial step
+      val thetas = Tools.lhs(nbSimus, priors.length).map {
+        row =>
+          (row zip priors).map {
+            case (sample, prior) => {
+              val unif = prior.asInstanceOf[Uniform]
+              unif.min + sample * (unif.max - unif.min)
+            }
+          }
+      }
+      // running simulations
+      val summaryStats = runSimulations(model, thetas, 0 until nbSimus)
+      var currentSeed = nbSimus
+      val varSummaryStats = for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
+      val accepted = {
+        for ((t, ss) <- thetas zip summaryStats) yield {
+          new WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / nbSimus.toDouble)
+        }
+      }.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
+      tolNext = accepted.last.simulation.distance
+      new State(0, nbSimus, nbSimus, tolerance, Some(accepted), Some(varSummaryStats))
+    } else {
+      // Following steps
+      val nbSimusStep = nbSimus - n_alpha
+      val thetas = (0 until nbSimusStep).map(_ => particleMover.move(previousState.accepted.get))
+      // init seeds
+      val seeds = (0 until nbSimusStep).map(_ + previousState.nbSimulatedTotal)
+      // running simulations
+      val summaryStats = runSimulations(model, thetas, seeds)
+      val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, previousState.varSummaryStats.get))).toSeq
+      val weights = computeWeights(previousState.accepted.get, newSimulations, priors)
+      val newAccepted = {
+        for ((s, w) <- newSimulations zip weights if s.distance <= tolerance) yield new WeightedSimulation(s, w / weights.sum)
+      }
+      pAcc = newAccepted.length.toDouble / nbSimusStep
+      val accepted = (previousState.accepted.get ++ newAccepted).sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
+      tolNext = accepted.last.simulation.distance
+      new State(previousState.iteration + 1, nbSimusStep, previousState.nbSimulatedTotal + nbSimusStep, tolerance,
+        Some(accepted),
+        previousState.varSummaryStats)
+    }
   }
 
-  override def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
+  /*override def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
                      distanceFunction: DistanceFunction,
                      particleMover: ParticleMover = new JabotMoving()): Iterator[State] = {
     var currentStep = 0
@@ -110,6 +160,6 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
       tolNext = accepted.last.simulation.distance
     }
     states.iterator
-  }
+  }*/
 
 }
