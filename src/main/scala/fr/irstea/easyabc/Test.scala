@@ -21,12 +21,19 @@ import fr.irstea.easyabc.model.examples.{TraitModel, ToyModel}
 import fr.irstea.easyabc.model.prior.Uniform
 import org.apache.commons.math3.random.MersenneTwister
 import fr.irstea.easyabc.distance.DefaultDistance
+import java.io.{File, PrintWriter}
 
 object Test extends App {
 
   def printState(s: State) = println("#" + s.iteration + " " + s.accepted.getOrElse(List()).length + "/"
     + s.nbSimulatedThisStep + "/" + s.nbSimulatedTotal + " tol=" + s.tolerance + "\n"
     + s.accepted.getOrElse(List()).mkString("\n"))
+
+  def writeState(filesPrefix: String, s: State) = {
+    val pw = new PrintWriter(new File(filesPrefix + s.iteration))
+    try pw.write(s.accepted.get.mkString("\n"))
+    finally pw.close()
+  }
 
   // init a RNG
   implicit val rng = new MersenneTwister(1)
