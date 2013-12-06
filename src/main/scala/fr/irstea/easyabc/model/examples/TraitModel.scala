@@ -38,7 +38,7 @@ class TraitModel(val J: Int = 500, val ntrait: Int = 1) extends Model {
    * @return four summary statistics: the species richness of the community ‘S’, its Shannon's index ‘H’,
    *         the mean of the trait value among individuals ‘MTV’ and the skewness of the trait value distribution ‘STV’
    */
-  def apply(thetas: Seq[Double], seed: Int): Seq[Double] = {
+  override def apply(thetas: Seq[Double], seed: Int): Seq[Double] = {
     val inputFile = new File("./input")
     val writer = new FileWriter(inputFile)
     try {
