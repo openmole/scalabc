@@ -209,7 +209,7 @@ void calculstat(double *stat,int *abondloc, int l, double **trait,double ntrait)
     //stat[(10+8*k)]/=stat[0];
     //stat[(11+8*k)]/=stat[1];
     
-    //rendre les estimateurs non biaisés :
+    //rendre les estimateurs non biaisï¿½s :
     //if (stat[1]>1){
     //    stat[(8+8*k)]*=(stat[1]/(stat[1]-1));
     //}
@@ -249,7 +249,7 @@ int main(int argc,char **argv){
     //in >> buffer; double SSmax; in >> SSmax;
     //in >> buffer; 
 	double ntrait; in >> ntrait;
-    //in >> buffer; 
+    //in >> buffer;
 	double *h; h= new double[int(ntrait)];
     for (int i=0;i<ntrait;i++){
         in >> h[i];
@@ -270,10 +270,9 @@ int main(int argc,char **argv){
     int lsimul;
     lsimul=J;
     in.close();
-    
-    ifstream in2("species_traits");
-    in2 >> buffer; int S; in2 >> S;
-    
+
+    // Default values are hardcoded
+    int S = 1000;
     double **trait;
     trait= new double*[S];
     for (int i=0;i<S;i++){
@@ -282,15 +281,16 @@ int main(int argc,char **argv){
     double *abondreg;
     abondreg=new double[S];
     double sumabondreg=0.0;
+    double nextValue=0.1;
     for (int i=0;i<S;i++){
-        in2 >> abondreg[i];
-	sumabondreg+=abondreg[i];
+        abondreg[i]=0.001;
+    	sumabondreg+=abondreg[i];
         for (int j=0;j<ntrait;j++){
-            in2 >> trait[i][j];
+            trait[i][j] = nextValue;
+            nextValue += 0.1;
         }
     }
-    in2.close();
-    
+
 	for (int i=0;i<S;i++){
         	abondreg[i]/=sumabondreg;
     	}
