@@ -3,7 +3,7 @@ package fr.irstea.easyabc
 import fr.irstea.easyabc.model.prior.PriorFunction
 import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.distance.DistanceFunction
-import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
+import fr.irstea.easyabc.sampling.{ JabotMoving, ParticleMover }
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -23,44 +23,61 @@ import fr.irstea.easyabc.sampling.{JabotMoving, ParticleMover}
  */
 
 case class Simulation(theta: Seq[Double],
-                      summaryStats: Seq[Double],
-                      distance: Double)
+  summaryStats: Seq[Double],
+  distance: Double)
 
 case class WeightedSimulation(simulation: Simulation, weight: Double)
 
-case class State(iteration: Int, nbSimulatedThisStep: Int, nbSimulatedTotal: Int, tolerance: Double, accepted: Option[Seq[WeightedSimulation]], varSummaryStats: Option[Seq[Double]])
+trait State {
+  def iteration: Int
+  def nbSimulatedThisStep: Int
+  def nbSimulatedTotal: Int
+  def accepted: Option[Seq[WeightedSimulation]]
+  def varSummaryStats: Option[Seq[Double]]
+  def tolerance: Double
+}
 
 trait SequentialABC {
 
-  def tolerancesIt(): Iterator[Double]
+  type STATE <: State
 
-  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double]
+  def initialState: STATE
+  def finished(s: STATE): Boolean
 
-  def sample(previousState: State, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int])
+  def computeWeights(
+    previouslyAccepted: Seq[WeightedSimulation],
+    newAccepted: Seq[Simulation],
+    priors: Seq[PriorFunction[Double]]): Seq[Double]
 
-  def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
-           previousState: State,
-           distanceFunction: DistanceFunction,
-           particleMover: ParticleMover): State
+  def sample(
+    previousState: STATE,
+    nbSimus: Int,
+    seedIndex: Int,
+    priors: Seq[PriorFunction[Double]],
+    particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int])
 
-  def apply(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int,
-            distanceFunction: DistanceFunction,
-            particleMover: ParticleMover = new JabotMoving()): Iterator[State] = {
-    var previousState = new State(0, 0, 0, 0, None, None)
-    tolerancesIt().map {
-      tol =>
-        previousState = step(model, priors, nbSimus, tol, previousState, distanceFunction, particleMover)
-        previousState
-    }
-    // prettier but the last tolerance is skipped
-    // val tolerances = tolerancesIt()
-    //Iterator.iterate(new State(0, 0, 0, 0, None, None))(step(model, priors, nbSimus, tolerances.next, _, distanceFunction, particleMover)) takeWhile (_ => tolerances.hasNext)
-  }
+  def step(
+    model: Model,
+    priors: Seq[PriorFunction[Double]],
+    nbSimus: Int,
+    previousState: STATE,
+    distanceFunction: DistanceFunction,
+    particleMover: ParticleMover): STATE
+
+  def apply(
+    model: Model,
+    priors: Seq[PriorFunction[Double]],
+    nbSimus: Int,
+    distanceFunction: DistanceFunction,
+    particleMover: ParticleMover = new JabotMoving()): Iterator[State] =
+    Iterator.iterate(initialState)(step(model, priors, nbSimus, _, distanceFunction, particleMover)).takeWhileInclusive(!finished(_))
 
   /**
    * computes particle weights
    */
-  def computeWeightsPrior(particles: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+  def computeWeightsPrior(
+    particles: Seq[Simulation],
+    priors: Seq[PriorFunction[Double]]): Seq[Double] = {
     for (particle <- particles.map(_.theta)) yield {
       var res = 1.0
       for ((param, prior) <- (particle, priors).zipped) {

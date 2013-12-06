@@ -18,7 +18,7 @@ package fr.irstea.easyabc.model.examples
  */
 
 import fr.irstea.easyabc.model.Model
-import java.io.{FileWriter, File}
+import java.io.{ FileWriter, File }
 import scala.io.Source
 import sys.process._
 

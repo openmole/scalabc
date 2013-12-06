@@ -1,6 +1,6 @@
 package fr.irstea.easyabc.model.prior
 
-import org.apache.commons.math3.random.{RandomDataGenerator, RandomGenerator}
+import org.apache.commons.math3.random.{ RandomDataGenerator, RandomGenerator }
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>

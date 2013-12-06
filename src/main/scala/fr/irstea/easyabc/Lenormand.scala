@@ -1,7 +1,7 @@
 package fr.irstea.easyabc
 
 import fr.irstea.easyabc.model.Model
-import fr.irstea.easyabc.model.prior.{Uniform, PriorFunction}
+import fr.irstea.easyabc.model.prior.{ Uniform, PriorFunction }
 import fr.irstea.easyabc.distance.DistanceFunction
 import fr.irstea.easyabc.sampling.ParticleMover
 import org.apache.commons.math3.random.RandomGenerator
@@ -25,15 +25,30 @@ import fr.irstea.easyabc.Tools._
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+case class LenormanState(
+  iteration: Int,
+  nbSimulatedThisStep: Int,
+  nbSimulatedTotal: Int,
+  tolerance: Double,
+  accepted: Option[Seq[WeightedSimulation]],
+  varSummaryStats: Option[Seq[Double]],
+  proportionOfAccepted: Double) extends State
+
 class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summaryStatsTarget: Seq[Double])(implicit rng: RandomGenerator) extends SequentialABC {
 
-  override def tolerancesIt(): Iterator[Double] = {
-    new Iterator[Double] {
-      def hasNext: Boolean = proportionOfAccepted > pAccMin
+  type STATE = LenormanState
 
-      def next(): Double = nextTolerance
-    }
-  }
+  def initialState = LenormanState(
+    iteration = 0,
+    nbSimulatedThisStep = 0,
+    nbSimulatedTotal = 0,
+    tolerance = 0.0,
+    None,
+    None,
+    pAccMin + 1)
+
+  def finished(s: STATE) = s.proportionOfAccepted > pAccMin
 
   override def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
@@ -56,10 +71,7 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     }
   }
 
-  var proportionOfAccepted = pAccMin + 1
-  var nextTolerance = 0.0
-
-  override def sample(previousState: State, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int]) = {
+  override def sample(previousState: LenormanState, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int]) = {
     if (previousState.accepted == None)
       (Tools.lhs(nbSimus, priors.length).map {
         row =>
@@ -73,53 +85,78 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     else (
       (0 until nbSimus).map(_ => particleMover.move(previousState.accepted.get)),
       (0 until nbSimus).map(_ + seedIndex)
-      )
+    )
   }
 
-  def analyse(priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double, previousState: State, distanceFunction: DistanceFunction, thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]]): State = {
+  def analyse(
+    priors: Seq[PriorFunction[Double]],
+    nbSimus: Int,
+    previousState: LenormanState,
+    distanceFunction: DistanceFunction,
+    thetas: Seq[Seq[Double]],
+    summaryStats: Seq[Seq[Double]]): STATE = {
     val n_alpha = math.ceil(nbSimus * alpha).toInt
     // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
     val varSummaryStats = previousState.varSummaryStats.getOrElse(
-      for (col <- 0 until summaryStatsTarget.length) yield
-        math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
+      for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
     )
     // selecting the simulations
-    val accepted = (if (previousState.accepted == None) {
-      // initial step: all simulations are kept
-      for ((t, ss) <- thetas zip summaryStats) yield
-        new WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / thetas.length.toDouble)
-    } else {
-      // following steps: computing distances and weights
-      val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, previousState.varSummaryStats.get))).toSeq
-      val weights = computeWeights(previousState.accepted.get, newSimulations, priors)
-      // keeping only new simulations under tolerance threshold
-      val newAccepted = {
-        for ((s, w) <- newSimulations zip weights if s.distance <= tolerance) yield new WeightedSimulation(s, w / weights.sum)
+    val acceptedRaw =
+      if (previousState.accepted == None) {
+        // initial step: all simulations are kept
+        for {
+          (t, ss) <- thetas zip summaryStats
+        } yield WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / thetas.length.toDouble)
+      } else {
+        // following steps: computing distances and weights
+        val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, previousState.varSummaryStats.get))).toSeq
+        val weights = computeWeights(previousState.accepted.get, newSimulations, priors)
+        // keeping only new simulations under tolerance threshold
+        val newAccepted =
+          for {
+            (s, w) <- newSimulations zip weights
+            if s.distance <= previousState.tolerance
+          } yield WeightedSimulation(s, w / weights.sum)
+        previousState.accepted.get ++ newAccepted
       }
-      proportionOfAccepted = newAccepted.length.toDouble / thetas.length
-      previousState.accepted.get ++ newAccepted
-    }).sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
-    nextTolerance = accepted.last.simulation.distance
-    new State(previousState.iteration + 1, thetas.length, previousState.nbSimulatedTotal + thetas.length, tolerance,
+
+    val accepted = acceptedRaw.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
+    val nextTolerance = accepted.last.simulation.distance
+
+    val proportionOfAccepted =
+      previousState.accepted match {
+        case None => previousState.proportionOfAccepted
+        case Some(previous) => (acceptedRaw.length - previous.length) / thetas.length
+      }
+
+    LenormanState(
+      previousState.iteration + 1,
+      thetas.length,
+      previousState.nbSimulatedTotal + thetas.length,
+      nextTolerance,
       Some(accepted),
-      Some(varSummaryStats))
+      Some(varSummaryStats),
+      proportionOfAccepted)
   }
 
-  override def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
-                    previousState: State,
-                    distanceFunction: DistanceFunction,
-                    particleMover: ParticleMover): State = {
+  override def step(
+    model: Model,
+    priors: Seq[PriorFunction[Double]],
+    nbSimus: Int,
+    previousState: STATE,
+    distanceFunction: DistanceFunction,
+    particleMover: ParticleMover): STATE = {
     val n_alpha = math.ceil(nbSimus * alpha).toInt
     val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
     // sampling thetas and init seeds
     val (thetas, seeds) = sample(previousState, nbSimusStep, previousState.nbSimulatedTotal, priors, particleMover)
     // running simulations
     val summaryStats = runSimulations(model, thetas, seeds)
-    analyse(priors, nbSimus, tolerance, previousState, distanceFunction, thetas, summaryStats)
+    analyse(priors, nbSimus, previousState, distanceFunction, thetas, summaryStats)
   }
 
   def computeWeights(simulations: Seq[Simulation], previousState: State, varSummaryStats: Seq[Double], thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]],
-                     tolerance: Double, distanceFunction: DistanceFunction, priors: Seq[PriorFunction[Double]]): Seq[WeightedSimulation] = {
+    tolerance: Double, distanceFunction: DistanceFunction, priors: Seq[PriorFunction[Double]]): Seq[WeightedSimulation] = {
     if (previousState.accepted == None) {
       simulations.map(new WeightedSimulation(_, weight = 1 / thetas.length.toDouble))
     } else {

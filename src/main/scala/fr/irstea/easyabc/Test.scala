@@ -17,11 +17,11 @@ package fr.irstea.easyabc
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import fr.irstea.easyabc.model.examples.{TraitModel, ToyModel}
+import fr.irstea.easyabc.model.examples.{ TraitModel, ToyModel }
 import fr.irstea.easyabc.model.prior.Uniform
 import org.apache.commons.math3.random.MersenneTwister
 import fr.irstea.easyabc.distance.DefaultDistance
-import java.io.{File, PrintWriter}
+import java.io.{ File, PrintWriter }
 
 object Test extends App {
 
@@ -73,7 +73,6 @@ object Test extends App {
     nbSimus = 5,
     distanceFunction = new DefaultDistance(abcTrait.summaryStatsTarget)
   ).foreach(printState)
-
 
   // initialization of Lenormand algorithm
   val maxTrait = new Lenormand(summaryStatsTarget = Seq(100, 2.5, 20, 30000))

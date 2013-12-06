@@ -1,9 +1,9 @@
 package fr.irstea.easyabc
 
 import breeze.linalg._
-import breeze.linalg.{sum => msum}
+import breeze.linalg.{ sum => msum }
 import breeze.numerics.sqrt
-import org.apache.commons.math3.random.{RandomDataGenerator, RandomGenerator}
+import org.apache.commons.math3.random.{ RandomDataGenerator, RandomGenerator }
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>

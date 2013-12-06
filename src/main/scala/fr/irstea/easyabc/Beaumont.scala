@@ -8,8 +8,8 @@ import org.apache.commons.math3.random.RandomGenerator
 import scala.Some
 import fr.irstea.easyabc.sampling.ParticleMover
 import breeze.stats.DescriptiveStats
-import breeze.linalg.{pow => bpow, DenseVector}
-import breeze.numerics.{exp => bexp}
+import breeze.linalg.{ pow => bpow, DenseVector }
+import breeze.numerics.{ exp => bexp }
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 
 /*
@@ -31,8 +31,22 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 
 class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])(implicit rng: RandomGenerator) extends SequentialABC {
 
+  case class BeaumontState(
+      iteration: Int,
+      nbSimulatedThisStep: Int,
+      nbSimulatedTotal: Int,
+      toleranceIndex: Int,
+      accepted: Option[Seq[WeightedSimulation]],
+      varSummaryStats: Option[Seq[Double]]) extends State {
+    def tolerance = tolerances(toleranceIndex)
+  }
 
-  override def tolerancesIt(): Iterator[Double] = tolerances.iterator
+  type STATE = BeaumontState
+
+  def initialState = BeaumontState(0, 0, 0, 0, None, None)
+  def finished(s: STATE): Boolean = s.toleranceIndex >= tolerances.size
+
+  //override def tolerancesIt(): Iterator[Double] = tolerances.iterator
 
   /**
    * computes particle weights with unidimensional jumps
@@ -69,7 +83,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     simus.filter(_.distance < tolerance)
   }
 
-  override def sample(previousState: State, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int]) = {
+  override def sample(previousState: BeaumontState, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int]) = {
     ( // sampling thetas
       (0 until nbSimus).map(_ => if (previousState.accepted == None) {
         for (p <- priors) yield p.value()
@@ -80,10 +94,13 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
       (0 until nbSimus).map(_ + seedIndex))
   }
 
-  override def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
-                    previousState: State,
-                    distanceFunction: DistanceFunction,
-                    particleMover: ParticleMover): State = {
+  override def step(
+    model: Model,
+    priors: Seq[PriorFunction[Double]],
+    nbSimus: Int,
+    previousState: BeaumontState,
+    distanceFunction: DistanceFunction,
+    particleMover: ParticleMover): BeaumontState = {
     var varSummaryStats: Seq[Double] = Nil
     var nbSimulated = 0
     val newAccepted = ListBuffer.empty[Simulation]
@@ -98,7 +115,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
         for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
       )
       // selecting the tolerable simulations
-      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats, tolerance, distanceFunction)) {
+      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats, previousState.tolerance, distanceFunction)) {
         newAccepted += s
       }
       nbSimulated += thetas.length
@@ -114,7 +131,11 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
       }
     val sumWeights = weights.sum
     // go to the next tolerance
-    new State(previousState.iteration + 1, nbSimulated, previousState.nbSimulatedTotal + nbSimulated, tolerance,
+    BeaumontState(
+      previousState.iteration + 1,
+      nbSimulated,
+      previousState.nbSimulatedTotal + nbSimulated,
+      previousState.toleranceIndex + 1,
       Some(for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)),
       Some(varSummaryStats))
   }

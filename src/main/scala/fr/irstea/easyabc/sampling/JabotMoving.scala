@@ -3,7 +3,7 @@ package fr.irstea.easyabc.sampling
 import fr.irstea.easyabc.WeightedSimulation
 import fr.irstea.easyabc.Tools._
 import breeze.linalg._
-import org.apache.commons.math3.random.{RandomDataGenerator, RandomGenerator}
+import org.apache.commons.math3.random.{ RandomDataGenerator, RandomGenerator }
 import breeze.numerics
 
 /*
