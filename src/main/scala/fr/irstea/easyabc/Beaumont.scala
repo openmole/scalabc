@@ -69,6 +69,17 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     simus.filter(_.distance < tolerance)
   }
 
+  override def sample(previousState: State, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int]) = {
+    ( // sampling thetas
+      (0 until nbSimus).map(_ => if (previousState.accepted == None) {
+        for (p <- priors) yield p.value()
+      } else {
+        particleMover.move(previousState.accepted.get)
+      }),
+      // init seeds
+      (0 until nbSimus).map(_ + seedIndex))
+  }
+
   override def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
                     previousState: State,
                     distanceFunction: DistanceFunction,
@@ -79,14 +90,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     while (newAccepted.size < nbSimus) {
       // we need this amount of accepted simulations to reach nbSimus
       val remainingSimusForThisStep = nbSimus - newAccepted.size
-      // sampling thetas
-      val thetas = (0 until remainingSimusForThisStep).map(_ => if (previousState.accepted == None) {
-        for (p <- priors) yield p.value()
-      } else {
-        particleMover.move(previousState.accepted.get)
-      })
-      // init seeds
-      val seeds = (0 until remainingSimusForThisStep).map(_ + previousState.nbSimulatedTotal + nbSimulated)
+      val (thetas, seeds) = sample(previousState, remainingSimusForThisStep, previousState.nbSimulatedTotal + nbSimulated, priors, particleMover)
       // running simulations
       val summaryStats = runSimulations(model, thetas, seeds)
       // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm

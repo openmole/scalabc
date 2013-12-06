@@ -59,14 +59,8 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
   var proportionOfAccepted = pAccMin + 1
   var nextTolerance = 0.0
 
-  override def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
-                    previousState: State,
-                    distanceFunction: DistanceFunction,
-                    particleMover: ParticleMover): State = {
-    val n_alpha = math.ceil(nbSimus * alpha).toInt
-    val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
-    // sampling thetas and init seeds
-    val (thetas, seeds) = if (previousState.accepted == None)
+  override def sample(previousState: State, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int]) = {
+    if (previousState.accepted == None)
       (Tools.lhs(nbSimus, priors.length).map {
         row =>
           (row zip priors).map {
@@ -76,9 +70,14 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
             }
           }
       }, 0 until nbSimus)
-    else ((0 until nbSimusStep).map(_ => particleMover.move(previousState.accepted.get)), (0 until nbSimusStep).map(_ + previousState.nbSimulatedTotal))
-    // running simulations
-    val summaryStats = runSimulations(model, thetas, seeds)
+    else (
+      (0 until nbSimus).map(_ => particleMover.move(previousState.accepted.get)),
+      (0 until nbSimus).map(_ + seedIndex)
+      )
+  }
+
+  def analyse(priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double, previousState: State, distanceFunction: DistanceFunction, thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]]): State = {
+    val n_alpha = math.ceil(nbSimus * alpha).toInt
     // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
     val varSummaryStats = previousState.varSummaryStats.getOrElse(
       for (col <- 0 until summaryStatsTarget.length) yield
@@ -88,7 +87,7 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     val accepted = (if (previousState.accepted == None) {
       // initial step: all simulations are kept
       for ((t, ss) <- thetas zip summaryStats) yield
-        new WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / nbSimus.toDouble)
+        new WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / thetas.length.toDouble)
     } else {
       // following steps: computing distances and weights
       val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, previousState.varSummaryStats.get))).toSeq
@@ -97,13 +96,37 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
       val newAccepted = {
         for ((s, w) <- newSimulations zip weights if s.distance <= tolerance) yield new WeightedSimulation(s, w / weights.sum)
       }
-      proportionOfAccepted = newAccepted.length.toDouble / nbSimusStep
+      proportionOfAccepted = newAccepted.length.toDouble / thetas.length
       previousState.accepted.get ++ newAccepted
     }).sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
     nextTolerance = accepted.last.simulation.distance
-    new State(previousState.iteration + 1, nbSimusStep, previousState.nbSimulatedTotal + nbSimusStep, tolerance,
+    new State(previousState.iteration + 1, thetas.length, previousState.nbSimulatedTotal + thetas.length, tolerance,
       Some(accepted),
       Some(varSummaryStats))
+  }
+
+  override def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
+                    previousState: State,
+                    distanceFunction: DistanceFunction,
+                    particleMover: ParticleMover): State = {
+    val n_alpha = math.ceil(nbSimus * alpha).toInt
+    val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
+    // sampling thetas and init seeds
+    val (thetas, seeds) = sample(previousState, nbSimusStep, previousState.nbSimulatedTotal, priors, particleMover)
+    // running simulations
+    val summaryStats = runSimulations(model, thetas, seeds)
+    analyse(priors, nbSimus, tolerance, previousState, distanceFunction, thetas, summaryStats)
+  }
+
+  def computeWeights(simulations: Seq[Simulation], previousState: State, varSummaryStats: Seq[Double], thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]],
+                     tolerance: Double, distanceFunction: DistanceFunction, priors: Seq[PriorFunction[Double]]): Seq[WeightedSimulation] = {
+    if (previousState.accepted == None) {
+      simulations.map(new WeightedSimulation(_, weight = 1 / thetas.length.toDouble))
+    } else {
+      val weights = computeWeights(previousState.accepted.get, simulations, priors)
+      val sumWeights = weights.sum
+      for ((s, w) <- simulations zip weights) yield WeightedSimulation(s, w / sumWeights)
+    }
   }
 
 }

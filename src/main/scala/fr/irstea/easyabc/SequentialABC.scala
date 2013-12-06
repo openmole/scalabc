@@ -36,6 +36,8 @@ trait SequentialABC {
 
   def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double]
 
+  def sample(previousState: State, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int])
+
   def step(model: Model, priors: Seq[PriorFunction[Double]], nbSimus: Int, tolerance: Double,
            previousState: State,
            distanceFunction: DistanceFunction,
