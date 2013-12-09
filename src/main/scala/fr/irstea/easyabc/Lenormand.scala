@@ -48,7 +48,7 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     None,
     pAccMin + 1)
 
-  def finished(s: STATE) = s.proportionOfAccepted > pAccMin
+  def finished(s: STATE) = s.proportionOfAccepted <= pAccMin
 
   override def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
@@ -122,13 +122,11 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
 
     val accepted = acceptedRaw.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
     val nextTolerance = accepted.last.simulation.distance
-
     val proportionOfAccepted =
       previousState.accepted match {
         case None => previousState.proportionOfAccepted
-        case Some(previous) => (acceptedRaw.length - previous.length) / thetas.length
+        case Some(previous) => (acceptedRaw.length - previous.length).toDouble / thetas.length
       }
-
     LenormanState(
       previousState.iteration + 1,
       thetas.length,
@@ -150,6 +148,7 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
     // sampling thetas and init seeds
     val (thetas, seeds) = sample(previousState, nbSimusStep, previousState.nbSimulatedTotal, priors, particleMover)
+    println(thetas.length+" simulations")
     // running simulations
     val summaryStats = runSimulations(model, thetas, seeds)
     analyse(priors, nbSimus, previousState, distanceFunction, thetas, summaryStats)
