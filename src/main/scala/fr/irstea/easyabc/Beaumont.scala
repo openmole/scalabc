@@ -18,7 +18,7 @@
 package fr.irstea.easyabc
 
 import fr.irstea.easyabc.model.Model
-import fr.irstea.easyabc.model.prior.PriorFunction
+import fr.irstea.easyabc.prior.PriorFunction
 import fr.irstea.easyabc.distance.DistanceFunction
 import scala.collection.mutable.ListBuffer
 import org.apache.commons.math3.random.RandomGenerator
@@ -29,8 +29,9 @@ import breeze.linalg.{ pow => bpow, DenseVector }
 import breeze.numerics.{ exp => bexp }
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import SequentialABC._
+import scala.util.Random
 
-class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])(implicit rng: RandomGenerator) extends SequentialABC {
+class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double]) extends SequentialABC {
 
   case class BeaumontState(
       iteration: Int,
@@ -52,7 +53,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
   /**
    * computes particle weights with unidimensional jumps
    */
-  override def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
     val nbParticle = previouslyAccepted.length
     val nbNewParticle = newAccepted.length
@@ -84,10 +85,15 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     simus.filter(_.distance < tolerance)
   }
 
-  override def sample(previousState: BeaumontState, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int]) = {
+  def sample(
+    previousState: BeaumontState,
+    nbSimus: Int,
+    seedIndex: Int,
+    priors: Seq[PriorFunction[Double]],
+    particleMover: ParticleMover)(implicit rng: Random): (Seq[Seq[Double]], Seq[Int]) = {
     ( // sampling thetas
       (0 until nbSimus).map(_ => if (previousState.accepted == None) {
-        for (p <- priors) yield p.value()
+        for (p <- priors) yield p.value
       } else {
         particleMover.move(previousState.accepted.get)
       }),
@@ -101,7 +107,7 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     nbSimus: Int,
     previousState: BeaumontState,
     distanceFunction: DistanceFunction,
-    particleMover: ParticleMover): BeaumontState = {
+    particleMover: ParticleMover)(implicit rng: Random): BeaumontState = {
     var varSummaryStats: Seq[Double] = Nil
     var nbSimulated = 0
     val newAccepted = ListBuffer.empty[Simulation]

@@ -1,8 +1,3 @@
-package fr.irstea.easyabc.sampling
-
-import fr.irstea.easyabc.WeightedSimulation
-import org.apache.commons.math3.random.RandomGenerator
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -20,6 +15,11 @@ import org.apache.commons.math3.random.RandomGenerator
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package fr.irstea.easyabc.sampling
+
+import fr.irstea.easyabc.WeightedSimulation
+import util.Random
+
 trait ParticleMover {
-  def move(simulations: Seq[WeightedSimulation])(implicit rng: RandomGenerator): Seq[Double]
+  def move(simulations: Seq[WeightedSimulation])(implicit rng: Random): Seq[Double]
 }

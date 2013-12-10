@@ -1,7 +1,3 @@
-package fr.irstea.easyabc.model.prior
-
-import org.apache.commons.math3.random.{ RandomDataGenerator, RandomGenerator }
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -19,10 +15,13 @@ import org.apache.commons.math3.random.{ RandomDataGenerator, RandomGenerator }
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Uniform(val min: Double, val max: Double)(implicit rng: RandomGenerator) extends PriorFunction[Double] {
-  val rdg = new RandomDataGenerator(rng)
+package fr.irstea.easyabc.prior
 
-  def value(): Double = rdg.nextUniform(min, max)
+import org.apache.commons.math3.random.RandomDataGenerator
+import scala.util.Random
+import fr.irstea.easyabc._
 
+class Uniform(val min: Double, val max: Double) extends PriorFunction[Double] {
+  def value(implicit rng: Random) = new RandomDataGenerator(rng).nextUniform(min, max)
   def density(value: Double): Double = 1 / (max - min)
 }

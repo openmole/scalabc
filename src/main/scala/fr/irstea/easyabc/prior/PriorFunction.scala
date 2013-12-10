@@ -1,5 +1,3 @@
-package fr.irstea.easyabc.model.prior
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -16,8 +14,12 @@ package fr.irstea.easyabc.model.prior
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-trait PriorFunction[T] {
-  def value(): T
 
+package fr.irstea.easyabc.prior
+
+import scala.util.Random
+
+trait PriorFunction[T] {
+  def value(implicit rng: Random): T
   def density(value: T): T
 }

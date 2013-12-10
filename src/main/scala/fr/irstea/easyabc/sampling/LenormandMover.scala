@@ -1,11 +1,3 @@
-package fr.irstea.easyabc.sampling
-
-import fr.irstea.easyabc.Tools._
-import breeze.linalg._
-import fr.irstea.easyabc.WeightedSimulation
-import org.apache.commons.math3.random.RandomGenerator
-import org.apache.commons.math3.distribution.MultivariateNormalDistribution
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -22,13 +14,22 @@ import org.apache.commons.math3.distribution.MultivariateNormalDistribution
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+package fr.irstea.easyabc.sampling
+
+import fr.irstea.easyabc._
+import breeze.linalg._
+import fr.irstea.easyabc.WeightedSimulation
+import org.apache.commons.math3.distribution.MultivariateNormalDistribution
+import scala.util.Random
+
 class LenormandMover extends ParticleMover {
 
   /**
    * implementation based on the the implementation of Lenormand
    * TODO seems to not working
    */
-  def move(simulations: Seq[WeightedSimulation])(implicit rng: RandomGenerator): Seq[Double] = {
+  def move(simulations: Seq[WeightedSimulation])(implicit rng: Random): Seq[Double] = {
     val weightsVector = DenseVector((for (s <- simulations) yield s.weight).toArray)
     val thetas = simulations.map(_.simulation.theta)
     val M = array2DToMatrix(simulations.map(_.simulation.theta))
@@ -41,7 +42,7 @@ class LenormandMover extends ParticleMover {
     for (r <- 0 until C.rows) {
       Cb(r).update(r, C(r, r))
     }
-    println(Cb.deep.mkString("\n"))
+
     val dist = new MultivariateNormalDistribution(rng, pickTheta(simulations).simulation.theta.toArray, Cb)
     // TODO check if in bounds?
     dist.sample()

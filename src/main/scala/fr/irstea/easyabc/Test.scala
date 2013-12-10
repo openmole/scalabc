@@ -18,10 +18,11 @@ package fr.irstea.easyabc
  */
 
 import fr.irstea.easyabc.model.examples.{ TraitModel, ToyModel }
-import fr.irstea.easyabc.model.prior.Uniform
-import org.apache.commons.math3.random.MersenneTwister
+import fr.irstea.easyabc.prior.Uniform
+import org.apache.commons.math3.random.{ RandomAdaptor, MersenneTwister }
 import fr.irstea.easyabc.distance.DefaultDistance
 import java.io.{ File, PrintWriter }
+import fr.irstea.easyabc._
 
 object Test extends App {
 
@@ -36,7 +37,7 @@ object Test extends App {
   }
 
   // init a RNG
-  implicit val rng = new MersenneTwister(1)
+  implicit val rng = new util.Random(new RandomAdaptor(new MersenneTwister(1)))
 
   // our model to explore
   val toyModel = new ToyModel

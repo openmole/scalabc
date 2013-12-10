@@ -1,14 +1,3 @@
-package fr.irstea.easyabc
-
-import fr.irstea.easyabc.model.Model
-import fr.irstea.easyabc.model.prior.{ Uniform, PriorFunction }
-import fr.irstea.easyabc.distance.DistanceFunction
-import fr.irstea.easyabc.sampling.ParticleMover
-import org.apache.commons.math3.random.RandomGenerator
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
-import breeze.linalg._
-import fr.irstea.easyabc.Tools._
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -26,6 +15,16 @@ import fr.irstea.easyabc.Tools._
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package fr.irstea.easyabc
+
+import fr.irstea.easyabc.model.Model
+import fr.irstea.easyabc.prior.{ Uniform, PriorFunction }
+import fr.irstea.easyabc.distance.DistanceFunction
+import fr.irstea.easyabc.sampling.ParticleMover
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+import breeze.linalg._
+import util.Random
+
 case class LenormanState(
   iteration: Int,
   nbSimulatedThisStep: Int,
@@ -37,7 +36,7 @@ case class LenormanState(
 
 import SequentialABC._
 
-class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summaryStatsTarget: Seq[Double])(implicit rng: RandomGenerator) extends SequentialABC {
+class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summaryStatsTarget: Seq[Double]) extends SequentialABC {
 
   type STATE = LenormanState
 
@@ -52,7 +51,7 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
 
   def finished(s: STATE) = s.proportionOfAccepted <= pAccMin
 
-  override def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
     val covmat: DenseMatrix[Double] = covariance(array2DToMatrix(previouslyAccepted.map(_.simulation.theta))) :* 2.0
     val multi = math.exp(-0.5 * nbParam * math.log(2 * math.Pi)) / math.sqrt(math.abs(det(covmat)))
@@ -73,9 +72,14 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     }
   }
 
-  override def sample(previousState: LenormanState, nbSimus: Int, seedIndex: Int, priors: Seq[PriorFunction[Double]], particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int]) = {
+  def sample(
+    previousState: LenormanState,
+    nbSimus: Int,
+    seedIndex: Int,
+    priors: Seq[PriorFunction[Double]],
+    particleMover: ParticleMover)(implicit rng: Random): (Seq[Seq[Double]], Seq[Int]) = {
     if (previousState.accepted == None)
-      (Tools.lhs(nbSimus, priors.length).map {
+      (lhs(nbSimus, priors.length).map {
         row =>
           (row zip priors).map {
             case (sample, prior) => {
@@ -145,7 +149,7 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     nbSimus: Int,
     previousState: STATE,
     distanceFunction: DistanceFunction,
-    particleMover: ParticleMover): STATE = {
+    particleMover: ParticleMover)(implicit rng: Random): STATE = {
     val n_alpha = math.ceil(nbSimus * alpha).toInt
     val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
     // sampling thetas and init seeds

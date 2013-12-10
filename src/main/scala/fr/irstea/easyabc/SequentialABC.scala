@@ -1,10 +1,3 @@
-package fr.irstea.easyabc
-
-import fr.irstea.easyabc.model.prior.PriorFunction
-import fr.irstea.easyabc.model.Model
-import fr.irstea.easyabc.distance.DistanceFunction
-import fr.irstea.easyabc.sampling.{ JabotMoving, ParticleMover }
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -21,6 +14,14 @@ import fr.irstea.easyabc.sampling.{ JabotMoving, ParticleMover }
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+package fr.irstea.easyabc
+
+import fr.irstea.easyabc.prior.PriorFunction
+import fr.irstea.easyabc.model.Model
+import fr.irstea.easyabc.distance.DistanceFunction
+import fr.irstea.easyabc.sampling.{ JabotMoving, ParticleMover }
+import scala.util.Random
 
 case class Simulation(theta: Seq[Double],
   summaryStats: Seq[Double],
@@ -68,7 +69,7 @@ trait SequentialABC {
   def initialState: STATE
   def finished(s: STATE): Boolean
 
-  def computeWeights(
+  /*def computeWeights(
     previouslyAccepted: Seq[WeightedSimulation],
     newAccepted: Seq[Simulation],
     priors: Seq[PriorFunction[Double]]): Seq[Double]
@@ -78,7 +79,7 @@ trait SequentialABC {
     nbSimus: Int,
     seedIndex: Int,
     priors: Seq[PriorFunction[Double]],
-    particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int])
+    particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int])*/
 
   def step(
     model: Model,
@@ -86,14 +87,14 @@ trait SequentialABC {
     nbSimus: Int,
     previousState: STATE,
     distanceFunction: DistanceFunction,
-    particleMover: ParticleMover): STATE
+    particleMover: ParticleMover)(implicit rng: Random): STATE
 
   def apply(
     model: Model,
     priors: Seq[PriorFunction[Double]],
     nbSimus: Int,
     distanceFunction: DistanceFunction,
-    particleMover: ParticleMover = new JabotMoving()): Iterator[State] =
+    particleMover: ParticleMover = new JabotMoving())(implicit rng: Random): Iterator[State] =
     Iterator.iterate(initialState)(step(model, priors, nbSimus, _, distanceFunction, particleMover)).takeWhileInclusive(!finished(_))
 
 }
