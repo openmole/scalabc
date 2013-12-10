@@ -69,7 +69,7 @@ trait SequentialABC {
   def initialState: STATE
   def finished(s: STATE): Boolean
 
-  /*def computeWeights(
+  def computeWeights(
     previouslyAccepted: Seq[WeightedSimulation],
     newAccepted: Seq[Simulation],
     priors: Seq[PriorFunction[Double]]): Seq[Double]
@@ -79,7 +79,7 @@ trait SequentialABC {
     nbSimus: Int,
     seedIndex: Int,
     priors: Seq[PriorFunction[Double]],
-    particleMover: ParticleMover): (Seq[Seq[Double]], Seq[Int])*/
+    particleMover: ParticleMover)(implicit rng: Random): (Seq[Seq[Double]], Seq[Int])
 
   def step(
     model: Model,
