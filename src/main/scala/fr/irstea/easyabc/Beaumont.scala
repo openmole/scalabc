@@ -1,17 +1,3 @@
-package fr.irstea.easyabc
-
-import fr.irstea.easyabc.model.Model
-import fr.irstea.easyabc.model.prior.PriorFunction
-import fr.irstea.easyabc.distance.DistanceFunction
-import scala.collection.mutable.ListBuffer
-import org.apache.commons.math3.random.RandomGenerator
-import scala.Some
-import fr.irstea.easyabc.sampling.ParticleMover
-import breeze.stats.DescriptiveStats
-import breeze.linalg.{ pow => bpow, DenseVector }
-import breeze.numerics.{ exp => bexp }
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -28,6 +14,21 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+package fr.irstea.easyabc
+
+import fr.irstea.easyabc.model.Model
+import fr.irstea.easyabc.model.prior.PriorFunction
+import fr.irstea.easyabc.distance.DistanceFunction
+import scala.collection.mutable.ListBuffer
+import org.apache.commons.math3.random.RandomGenerator
+import scala.Some
+import fr.irstea.easyabc.sampling.ParticleMover
+import breeze.stats.DescriptiveStats
+import breeze.linalg.{ pow => bpow, DenseVector }
+import breeze.numerics.{ exp => bexp }
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+import SequentialABC._
 
 class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])(implicit rng: RandomGenerator) extends SequentialABC {
 

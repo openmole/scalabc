@@ -35,6 +35,8 @@ case class LenormanState(
   varSummaryStats: Option[Seq[Double]],
   proportionOfAccepted: Double) extends State
 
+import SequentialABC._
+
 class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summaryStatsTarget: Seq[Double])(implicit rng: RandomGenerator) extends SequentialABC {
 
   type STATE = LenormanState
@@ -148,7 +150,6 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
     // sampling thetas and init seeds
     val (thetas, seeds) = sample(previousState, nbSimusStep, previousState.nbSimulatedTotal, priors, particleMover)
-    println(thetas.length+" simulations")
     // running simulations
     val summaryStats = runSimulations(model, thetas, seeds)
     analyse(priors, nbSimus, previousState, distanceFunction, thetas, summaryStats)

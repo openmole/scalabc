@@ -37,6 +37,30 @@ trait State {
   def tolerance: Double
 }
 
+object SequentialABC {
+  /**
+   * computes particle weights
+   */
+  def computeWeightsPrior(
+    particles: Seq[Simulation],
+    priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+    for (particle <- particles.map(_.theta)) yield {
+      var res = 1.0
+      for ((param, prior) <- (particle, priors).zipped) {
+        res *= prior.density(param)
+      }
+      res
+    }
+  }
+
+  def runSimulations(model: Model, thetas: Seq[Seq[Double]], seeds: Seq[Int]): Seq[Seq[Double]] = {
+    (thetas zip seeds).map {
+      case (theta, seed) => model.apply(theta, seed)
+    }
+  }
+
+}
+
 trait SequentialABC {
 
   type STATE <: State
@@ -71,26 +95,5 @@ trait SequentialABC {
     distanceFunction: DistanceFunction,
     particleMover: ParticleMover = new JabotMoving()): Iterator[State] =
     Iterator.iterate(initialState)(step(model, priors, nbSimus, _, distanceFunction, particleMover)).takeWhileInclusive(!finished(_))
-
-  /**
-   * computes particle weights
-   */
-  def computeWeightsPrior(
-    particles: Seq[Simulation],
-    priors: Seq[PriorFunction[Double]]): Seq[Double] = {
-    for (particle <- particles.map(_.theta)) yield {
-      var res = 1.0
-      for ((param, prior) <- (particle, priors).zipped) {
-        res *= prior.density(param)
-      }
-      res
-    }
-  }
-
-  def runSimulations(model: Model, thetas: Seq[Seq[Double]], seeds: Seq[Int]): Seq[Seq[Double]] = {
-    (thetas zip seeds).map {
-      case (theta, seed) => model.apply(theta, seed)
-    }
-  }
 
 }
