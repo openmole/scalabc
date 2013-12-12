@@ -105,9 +105,8 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     model: Model,
     priors: Seq[PriorFunction[Double]],
     nbSimus: Int,
-    previousState: BeaumontState,
     distanceFunction: DistanceFunction,
-    particleMover: ParticleMover)(implicit rng: Random): BeaumontState = {
+    particleMover: ParticleMover)(previousState: STATE)(implicit rng: Random): BeaumontState = {
     var varSummaryStats: Seq[Double] = Nil
     var nbSimulated = 0
     val newAccepted = ListBuffer.empty[Simulation]

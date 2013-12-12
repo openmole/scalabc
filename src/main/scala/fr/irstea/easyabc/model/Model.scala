@@ -19,5 +19,4 @@ package fr.irstea.easyabc.model
 
 trait Model {
   def apply(input: Seq[Double], seed: Int): Seq[Double]
-
 }

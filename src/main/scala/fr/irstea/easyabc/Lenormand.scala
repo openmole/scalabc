@@ -147,9 +147,8 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     model: Model,
     priors: Seq[PriorFunction[Double]],
     nbSimus: Int,
-    previousState: STATE,
     distanceFunction: DistanceFunction,
-    particleMover: ParticleMover)(implicit rng: Random): STATE = {
+    particleMover: ParticleMover)(previousState: STATE)(implicit rng: Random): STATE = {
     val n_alpha = math.ceil(nbSimus * alpha).toInt
     val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
     // sampling thetas and init seeds

@@ -85,9 +85,8 @@ trait SequentialABC {
     model: Model,
     priors: Seq[PriorFunction[Double]],
     nbSimus: Int,
-    previousState: STATE,
     distanceFunction: DistanceFunction,
-    particleMover: ParticleMover)(implicit rng: Random): STATE
+    particleMover: ParticleMover)(state: STATE)(implicit rng: Random): STATE
 
   def apply(
     model: Model,
@@ -95,6 +94,6 @@ trait SequentialABC {
     nbSimus: Int,
     distanceFunction: DistanceFunction,
     particleMover: ParticleMover = new JabotMoving())(implicit rng: Random): Iterator[State] =
-    Iterator.iterate(initialState)(step(model, priors, nbSimus, _, distanceFunction, particleMover)).takeWhileInclusive(!finished(_))
+    Iterator.iterate(initialState)(step(model, priors, nbSimus, distanceFunction, particleMover)).takeWhileInclusive(!finished(_))
 
 }
