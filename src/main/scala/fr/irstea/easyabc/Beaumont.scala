@@ -35,17 +35,17 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
 
   case class BeaumontState(
       iteration: Int,
-      nbSimulatedThisStep: Int,
-      nbSimulatedTotal: Int,
       toleranceIndex: Int,
       accepted: Option[Seq[WeightedSimulation]],
-      varSummaryStats: Option[Seq[Double]]) extends State {
+      varSummaryStats: Option[Seq[Double]],
+      evaluationsForStep: Int,
+      evaluations: Int) extends State {
     def tolerance = tolerances(toleranceIndex)
   }
 
   type STATE = BeaumontState
 
-  def initialState = BeaumontState(0, 0, 0, 0, None, None)
+  def initialState = BeaumontState(0, 0, None, None, 0, 0)
   def finished(s: STATE): Boolean = s.toleranceIndex >= tolerances.size
 
   //override def tolerancesIt(): Iterator[Double] = tolerances.iterator
@@ -88,18 +88,14 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
   def sample(
     previousState: BeaumontState,
     nbSimus: Int,
-    seedIndex: Int,
     priors: Seq[PriorFunction[Double]],
-    particleMover: ParticleMover)(implicit rng: Random): (Seq[Seq[Double]], Seq[Int]) = {
-    ( // sampling thetas
-      (0 until nbSimus).map(_ => if (previousState.accepted == None) {
-        for (p <- priors) yield p.value
-      } else {
-        particleMover.move(previousState.accepted.get)
-      }),
-      // init seeds
-      (0 until nbSimus).map(_ + seedIndex))
-  }
+    particleMover: ParticleMover)(implicit rng: Random): Seq[Seq[Double]] =
+    // sampling thetas
+    (0 until nbSimus).map(_ => if (previousState.accepted == None) {
+      for (p <- priors) yield p.value
+    } else {
+      particleMover.move(previousState.accepted.get)
+    })
 
   override def step(
     model: Model,
@@ -113,9 +109,9 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     while (newAccepted.size < nbSimus) {
       // we need this amount of accepted simulations to reach nbSimus
       val remainingSimusForThisStep = nbSimus - newAccepted.size
-      val (thetas, seeds) = sample(previousState, remainingSimusForThisStep, previousState.nbSimulatedTotal + nbSimulated, priors, particleMover)
+      val thetas = sample(previousState, remainingSimusForThisStep, priors, particleMover)
       // running simulations
-      val summaryStats = runSimulations(model, thetas, seeds)
+      val summaryStats = runSimulations(model, thetas)
       // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
       varSummaryStats = previousState.varSummaryStats.getOrElse(
         for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
@@ -139,11 +135,12 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
     // go to the next tolerance
     BeaumontState(
       previousState.iteration + 1,
-      nbSimulated,
-      previousState.nbSimulatedTotal + nbSimulated,
       previousState.toleranceIndex + 1,
       Some(for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)),
-      Some(varSummaryStats))
+      Some(varSummaryStats),
+      nbSimulated,
+      previousState.evaluations + nbSimulated
+    )
   }
 
 }

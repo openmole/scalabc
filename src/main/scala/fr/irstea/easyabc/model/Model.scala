@@ -18,5 +18,5 @@ package fr.irstea.easyabc.model
  */
 
 trait Model {
-  def apply(input: Seq[Double], seed: Int): Seq[Double]
+  def apply(input: Seq[Double], seed: Long): Seq[Double]
 }

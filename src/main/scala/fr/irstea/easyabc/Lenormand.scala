@@ -27,12 +27,12 @@ import util.Random
 
 case class LenormanState(
   iteration: Int,
-  nbSimulatedThisStep: Int,
-  nbSimulatedTotal: Int,
   tolerance: Double,
   accepted: Option[Seq[WeightedSimulation]],
   varSummaryStats: Option[Seq[Double]],
-  proportionOfAccepted: Double) extends State
+  proportionOfAccepted: Double,
+  evaluationsForStep: Int,
+  evaluations: Int) extends State
 
 import SequentialABC._
 
@@ -42,12 +42,12 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
 
   def initialState = LenormanState(
     iteration = 0,
-    nbSimulatedThisStep = 0,
-    nbSimulatedTotal = 0,
     tolerance = 0.0,
     None,
     None,
-    pAccMin + 1)
+    pAccMin + 1,
+    0,
+    0)
 
   def finished(s: STATE) = s.proportionOfAccepted <= pAccMin
 
@@ -75,11 +75,10 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
   def sample(
     previousState: LenormanState,
     nbSimus: Int,
-    seedIndex: Int,
     priors: Seq[PriorFunction[Double]],
-    particleMover: ParticleMover)(implicit rng: Random): (Seq[Seq[Double]], Seq[Int]) = {
+    particleMover: ParticleMover)(implicit rng: Random): Seq[Seq[Double]] = {
     if (previousState.accepted == None)
-      (lhs(nbSimus, priors.length).map {
+      lhs(nbSimus, priors.length).map {
         row =>
           (row zip priors).map {
             case (sample, prior) => {
@@ -87,11 +86,9 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
               unif.min + sample * (unif.max - unif.min)
             }
           }
-      }, 0 until nbSimus)
-    else (
-      (0 until nbSimus).map(_ => particleMover.move(previousState.accepted.get)),
-      (0 until nbSimus).map(_ + seedIndex)
-    )
+      }
+    else (0 until nbSimus).map(_ => particleMover.move(previousState.accepted.get))
+
   }
 
   def analyse(
@@ -135,12 +132,13 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
       }
     LenormanState(
       previousState.iteration + 1,
-      thetas.length,
-      previousState.nbSimulatedTotal + thetas.length,
       nextTolerance,
       Some(accepted),
       Some(varSummaryStats),
-      proportionOfAccepted)
+      proportionOfAccepted,
+      thetas.size,
+      previousState.evaluations + thetas.size
+    )
   }
 
   override def step(
@@ -152,9 +150,9 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     val n_alpha = math.ceil(nbSimus * alpha).toInt
     val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
     // sampling thetas and init seeds
-    val (thetas, seeds) = sample(previousState, nbSimusStep, previousState.nbSimulatedTotal, priors, particleMover)
+    val thetas = sample(previousState, nbSimusStep, priors, particleMover)
     // running simulations
-    val summaryStats = runSimulations(model, thetas, seeds)
+    val summaryStats = runSimulations(model, thetas)
     analyse(priors, nbSimus, previousState, distanceFunction, thetas, summaryStats)
   }
 

@@ -31,11 +31,11 @@ case class WeightedSimulation(simulation: Simulation, weight: Double)
 
 trait State {
   def iteration: Int
-  def nbSimulatedThisStep: Int
-  def nbSimulatedTotal: Int
   def accepted: Option[Seq[WeightedSimulation]]
   def varSummaryStats: Option[Seq[Double]]
   def tolerance: Double
+  def evaluationsForStep: Int
+  def evaluations: Int
 }
 
 object SequentialABC {
@@ -54,11 +54,10 @@ object SequentialABC {
     }
   }
 
-  def runSimulations(model: Model, thetas: Seq[Seq[Double]], seeds: Seq[Int]): Seq[Seq[Double]] = {
-    (thetas zip seeds).map {
+  def runSimulations(model: Model, thetas: Seq[Seq[Double]])(implicit rng: Random): Seq[Seq[Double]] =
+    (thetas.iterator zip Iterator.continually(rng.nextLong())).toSeq.map {
       case (theta, seed) => model.apply(theta, seed)
     }
-  }
 
 }
 
@@ -77,9 +76,8 @@ trait SequentialABC {
   def sample(
     previousState: STATE,
     nbSimus: Int,
-    seedIndex: Int,
     priors: Seq[PriorFunction[Double]],
-    particleMover: ParticleMover)(implicit rng: Random): (Seq[Seq[Double]], Seq[Int])
+    particleMover: ParticleMover)(implicit rng: Random): Seq[Seq[Double]]
 
   def step(
     model: Model,

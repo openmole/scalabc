@@ -27,7 +27,7 @@ import fr.irstea.easyabc._
 object Test extends App {
 
   def printState(s: State) = println("#" + s.iteration + " " + s.accepted.getOrElse(List()).length + "/"
-    + s.nbSimulatedThisStep + "/" + s.nbSimulatedTotal + " tol=" + s.tolerance + "\n"
+    + s.evaluationsForStep + "/" + s.evaluations + " tol=" + s.tolerance + "\n"
     + s.accepted.getOrElse(List()).mkString("\n"))
 
   def writeState(filesPrefix: String, s: State) = {
