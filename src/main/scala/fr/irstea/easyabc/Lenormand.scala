@@ -77,8 +77,12 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     nbSimus: Int,
     priors: Seq[PriorFunction[Double]],
     particleMover: ParticleMover)(implicit rng: Random): Seq[Seq[Double]] = {
+
+    val n_alpha = math.ceil(nbSimus * alpha).toInt
+    val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
+
     if (previousState.accepted == None)
-      lhs(nbSimus, priors.length).map {
+      lhs(nbSimusStep, priors.length).map {
         row =>
           (row zip priors).map {
             case (sample, prior) => {
@@ -87,7 +91,7 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
             }
           }
       }
-    else (0 until nbSimus).map(_ => particleMover.move(previousState.accepted.get))
+    else (0 until nbSimusStep).map(_ => particleMover.move(previousState.accepted.get))
 
   }
 
@@ -147,10 +151,8 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     nbSimus: Int,
     distanceFunction: DistanceFunction,
     particleMover: ParticleMover)(previousState: STATE)(implicit rng: Random): STATE = {
-    val n_alpha = math.ceil(nbSimus * alpha).toInt
-    val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
-    // sampling thetas and init seeds
-    val thetas = sample(previousState, nbSimusStep, priors, particleMover)
+    // sampling thetas
+    val thetas = sample(previousState, nbSimus, priors, particleMover)
     // running simulations
     val summaryStats = runSimulations(model, thetas)
     analyse(priors, nbSimus, previousState, distanceFunction, thetas, summaryStats)
