@@ -19,7 +19,7 @@ package fr.irstea.easyabc
 
 import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.prior.PriorFunction
-import fr.irstea.easyabc.distance.DistanceFunction
+import fr.irstea.easyabc.distance.Distance
 import scala.collection.mutable.ListBuffer
 import org.apache.commons.math3.random.RandomGenerator
 import scala.Some
@@ -46,7 +46,7 @@ trait Beaumont extends SequentialABC {
   type STATE = BeaumontState
 
   def tolerances: Seq[Double]
-  def summaryStatsTarget: Seq[Double]
+
   def initialState = BeaumontState(0, 0, None, None, 0, 0)
   def finished(s: STATE): Boolean = s.toleranceIndex >= tolerances.size
 
@@ -55,7 +55,7 @@ trait Beaumont extends SequentialABC {
   /**
    * computes particle weights with unidimensional jumps
    */
-  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation], priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+  def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
     val nbParticle = previouslyAccepted.length
     val nbNewParticle = newAccepted.length
@@ -79,9 +79,9 @@ trait Beaumont extends SequentialABC {
     }
   }
 
-  def selectSimulation(thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]], var_summaryStats: Seq[Double], tolerance: Double, distanceFunction: DistanceFunction): Seq[Simulation] = {
+  def selectSimulation(thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]], var_summaryStats: Seq[Double], tolerance: Double): Seq[Simulation] = {
     val simus: Seq[Simulation] = for ((theta, summaryStat) <- thetas zip summaryStats) yield {
-      new Simulation(theta, summaryStat, distance = distanceFunction.distance(summaryStat, var_summaryStats))
+      new Simulation(theta, summaryStat, distance = distance(summaryStat, var_summaryStats))
     }
     //simus.map(s => println(s.theta + " = " + s.summaryStats + " -> " + s.distance))
     simus.filter(_.distance < tolerance)
@@ -89,8 +89,7 @@ trait Beaumont extends SequentialABC {
 
   def sample(
     previousState: BeaumontState,
-    nbSimus: Int,
-    priors: Seq[PriorFunction[Double]])(implicit rng: Random): Seq[Seq[Double]] =
+    nbSimus: Int)(implicit rng: Random): Seq[Seq[Double]] =
     // sampling thetas
     (0 until nbSimus).map(_ =>
       previousState.accepted match {
@@ -100,16 +99,14 @@ trait Beaumont extends SequentialABC {
       })
 
   override def step(
-    model: Model,
-    priors: Seq[PriorFunction[Double]],
-    distanceFunction: DistanceFunction)(previousState: STATE)(implicit rng: Random): BeaumontState = {
+    model: Model)(previousState: STATE)(implicit rng: Random): BeaumontState = {
     var varSummaryStats: Seq[Double] = Nil
     var nbSimulated = 0
     val newAccepted = ListBuffer.empty[Simulation]
     while (newAccepted.size < simulations) {
       // we need this amount of accepted simulations to reach nbSimus
       val remainingSimusForThisStep = simulations - newAccepted.size
-      val thetas = sample(previousState, remainingSimusForThisStep, priors)
+      val thetas = sample(previousState, remainingSimusForThisStep)
       // running simulations
       val summaryStats = runSimulations(model, thetas)
       // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
@@ -117,7 +114,7 @@ trait Beaumont extends SequentialABC {
         for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
       )
       // selecting the tolerable simulations
-      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats, previousState.tolerance, distanceFunction)) {
+      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats, previousState.tolerance)) {
         newAccepted += s
       }
       nbSimulated += thetas.length
@@ -130,7 +127,7 @@ trait Beaumont extends SequentialABC {
           Array.fill(simulations)(1 / simulations.toDouble)
         case Some(accepted) =>
           // following steps
-          computeWeights(accepted, newAccepted, priors)
+          computeWeights(accepted, newAccepted)
       }
     val sumWeights = weights.sum
     // go to the next tolerance

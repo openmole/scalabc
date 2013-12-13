@@ -28,6 +28,10 @@ class DefaultDistanceTest extends FunSuite {
     val target = Seq(0.0, 10.0)
     val stats = Seq(-1.0, 9.0)
     val variance = Seq(0.02, 0.02)
-    assert(math.abs(new DefaultDistance(target).distance(stats, variance) - 0.04) < 0.000001)
+    assert(
+      math.abs(
+        new DefaultDistance {
+          def summaryStatsTarget = target
+        }.distance(stats, variance) - 0.04) < 0.000001)
   }
 }

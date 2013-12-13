@@ -16,7 +16,7 @@ package fr.irstea.easyabc.distance
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-class DefaultDistance(summaryStatsTarget: Seq[Double]) extends DistanceFunction(summaryStatsTarget) {
+trait DefaultDistance <: Distance {
 
   def distance(summaryStats: Seq[Double], initVariance: Seq[Double]): Double = {
     (initVariance, summaryStats, summaryStatsTarget).zipped.map {

@@ -46,26 +46,24 @@ object Test extends App {
   //println(toyModel.apply(Seq(2.0, 3.0), 1))
 
   // initialization of Lenormand algorithm
-  val maxToy = new Lenormand with JabotMover {
+  val maxToy = new Lenormand with JabotMover with DefaultDistance {
     def summaryStatsTarget = Seq(5, 5)
     def simulations = 10
+    def priors = Seq(Uniform(0.0, 10.0), Uniform(0.0, 10.0))
   }
   //run the algorithm
-  maxToy.apply(model = toyModel,
-    priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
-    distanceFunction = new DefaultDistance(maxToy.summaryStatsTarget)
+  maxToy.apply(model = toyModel
   ).foreach(printState)
 
   // initialization of Beaumont algorithm
-  val abcToy = new Beaumont with JabotMover {
+  val abcToy = new Beaumont with JabotMover with DefaultDistance {
     def tolerances = Seq(5, 1, 0.5)
     def summaryStatsTarget = Seq(5, 5)
     def simulations = 10
+    def priors = Seq(Uniform(0.0, 10.0), Uniform(0.0, 10.0))
   }
 
-  abcToy.apply(model = toyModel,
-    priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
-    distanceFunction = new DefaultDistance(abcToy.summaryStatsTarget)
+  abcToy.apply(model = toyModel
   ).foreach(printState)
 
   // an other model
@@ -74,26 +72,24 @@ object Test extends App {
   //println(traitModel.apply(Seq(4, 1, 0.5, -0.1), 1))
 
   // initialization of Beaumont algorithm
-  val abcTrait = new Beaumont with JabotMover {
+  val abcTrait = new Beaumont with JabotMover with DefaultDistance {
     def tolerances = Seq(80, 50, 20)
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
     def simulations = 5
+    def priors = Seq(Uniform(3.0, 5.0), Uniform(-2.3, 1.6), Uniform(-25, 125), Uniform(-0.7, 3.2))
   }
   //run the algorithm
-  abcTrait.apply(model = traitModel,
-    priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
-    distanceFunction = new DefaultDistance(abcTrait.summaryStatsTarget)
+  abcTrait.apply(model = traitModel
   ).foreach(printState)
 
   // initialization of Lenormand algorithm
-  val maxTrait = new Lenormand with JabotMover {
+  val maxTrait = new Lenormand with JabotMover with DefaultDistance {
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
     def simulations = 20
+    def priors = Seq(Uniform(3.0, 5.0), Uniform(-2.3, 1.6), Uniform(-25, 125), Uniform(-0.7, 3.2))
   }
   //run the algorithm
-  maxTrait.apply(model = traitModel,
-    priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
-    distanceFunction = new DefaultDistance(maxToy.summaryStatsTarget)
+  maxTrait.apply(model = traitModel
   ).foreach(printState)
 
 }

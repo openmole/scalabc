@@ -17,7 +17,10 @@ package fr.irstea.easyabc.distance
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class DistanceFunction(val summaryStatsTarget: Seq[Double]) {
+trait Distance {
+
+  def summaryStatsTarget: Seq[Double]
+
   /**
    *
    * @param summaryStats

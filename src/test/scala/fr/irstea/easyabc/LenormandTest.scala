@@ -22,6 +22,8 @@ import org.scalatest.FunSuite
 import org.junit.runner.RunWith
 import fr.irstea.easyabc.model.prior.Uniform
 import org.apache.commons.math3.random.MersenneTwister
+import fr.irstea.easyabc.sampling.JabotMover
+import fr.irstea.easyabc.distance.DefaultDistance
 
 @RunWith(classOf[JUnitRunner])
 class LenormandTest extends FunSuite {
@@ -53,8 +55,9 @@ class LenormandTest extends FunSuite {
     )
     implicit val rng = new MersenneTwister(42)
     val prior = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0))
-    val lenormand = new Lenormand{
+    val lenormand = new Lenormand with JabotMover with DefaultDistance {
       def summaryStatsTarget = Seq(5, 5)
+      def simulations = ???
     }
     val weights = lenormand.computeWeights(previouslyAccepted, newAccepted, prior)
     // results computed in R with EasyABC 1.2.2

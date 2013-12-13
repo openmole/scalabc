@@ -22,6 +22,8 @@ import org.scalatest.FunSuite
 import org.junit.runner.RunWith
 import fr.irstea.easyabc.model.prior.Uniform
 import org.apache.commons.math3.random.MersenneTwister
+import fr.irstea.easyabc.sampling.JabotMover
+import fr.irstea.easyabc.distance.DefaultDistance
 
 @RunWith(classOf[JUnitRunner])
 class BeaumontTest extends FunSuite {
@@ -53,7 +55,11 @@ class BeaumontTest extends FunSuite {
     )
     implicit val rng = new MersenneTwister(42)
     val prior = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0))
-    val beaumont = new Beaumont(tolerances = Seq(5, 1), summaryStatsTarget = Seq(5, 5))
+    val beaumont = new Beaumont with JabotMover with DefaultDistance {
+      def tolerances = Seq(5, 1)
+      def summaryStatsTarget = Seq(5, 5)
+      def simulations = ???
+    }
     val weights = beaumont.computeWeights(previouslyAccepted, newAccepted, prior)
     // results computed in R with EasyABC 1.2.2
     val expectedWeights = Seq(3.9712876632648944, 4.208706219310921, 4.323267769411762, 4.178086058368066, 4.215553932293464, 4.473176741121306, 3.951590130569026, 4.095066779054165, 3.987032075397982, 3.9571909676677883)
