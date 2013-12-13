@@ -90,27 +90,26 @@ trait Beaumont extends SequentialABC {
   def sample(
     previousState: BeaumontState,
     nbSimus: Int,
-    priors: Seq[PriorFunction[Double]],
-    particleMover: ParticleMover)(implicit rng: Random): Seq[Seq[Double]] =
+    priors: Seq[PriorFunction[Double]])(implicit rng: Random): Seq[Seq[Double]] =
     // sampling thetas
-    (0 until nbSimus).map(_ => if (previousState.accepted == None) {
-      for (p <- priors) yield p.value
-    } else {
-      particleMover.move(previousState.accepted.get)
-    })
+    (0 until nbSimus).map(_ =>
+      previousState.accepted match {
+        case None =>
+          for (p <- priors) yield p.value
+        case Some(accepted) => move(accepted)
+      })
 
   override def step(
     model: Model,
     priors: Seq[PriorFunction[Double]],
-    distanceFunction: DistanceFunction,
-    particleMover: ParticleMover)(previousState: STATE)(implicit rng: Random): BeaumontState = {
+    distanceFunction: DistanceFunction)(previousState: STATE)(implicit rng: Random): BeaumontState = {
     var varSummaryStats: Seq[Double] = Nil
     var nbSimulated = 0
     val newAccepted = ListBuffer.empty[Simulation]
     while (newAccepted.size < simulations) {
       // we need this amount of accepted simulations to reach nbSimus
       val remainingSimusForThisStep = simulations - newAccepted.size
-      val thetas = sample(previousState, remainingSimusForThisStep, priors, particleMover)
+      val thetas = sample(previousState, remainingSimusForThisStep, priors)
       // running simulations
       val summaryStats = runSimulations(model, thetas)
       // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm

@@ -24,7 +24,7 @@ import breeze.numerics
 import scala.util.Random
 import org.apache.commons.math3.random.RandomDataGenerator
 
-class JabotMoving extends ParticleMover {
+trait JabotMover extends ParticleMover {
   /**
    * Implementation based on those from Jabot in EasyABC R package
    * @param simulations

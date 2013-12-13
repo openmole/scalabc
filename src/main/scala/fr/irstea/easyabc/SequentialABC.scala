@@ -20,7 +20,7 @@ package fr.irstea.easyabc
 import fr.irstea.easyabc.prior.PriorFunction
 import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.distance.DistanceFunction
-import fr.irstea.easyabc.sampling.{ JabotMoving, ParticleMover }
+import fr.irstea.easyabc.sampling.{ JabotMover, ParticleMover }
 import scala.util.Random
 
 case class Simulation(theta: Seq[Double],
@@ -61,7 +61,7 @@ object SequentialABC {
 
 }
 
-trait SequentialABC {
+trait SequentialABC <: ParticleMover {
 
   type STATE <: State
 
@@ -77,20 +77,17 @@ trait SequentialABC {
   def sample(
     previousState: STATE,
     simulations: Int,
-    priors: Seq[PriorFunction[Double]],
-    particleMover: ParticleMover)(implicit rng: Random): Seq[Seq[Double]]
+    priors: Seq[PriorFunction[Double]])(implicit rng: Random): Seq[Seq[Double]]
 
   def step(
     model: Model,
     priors: Seq[PriorFunction[Double]],
-    distanceFunction: DistanceFunction,
-    particleMover: ParticleMover)(state: STATE)(implicit rng: Random): STATE
+    distanceFunction: DistanceFunction)(state: STATE)(implicit rng: Random): STATE
 
   def apply(
     model: Model,
     priors: Seq[PriorFunction[Double]],
-    distanceFunction: DistanceFunction,
-    particleMover: ParticleMover = new JabotMoving())(implicit rng: Random): Iterator[State] =
-    Iterator.iterate(initialState)(step(model, priors, distanceFunction, particleMover)).takeWhileInclusive(!finished(_))
+    distanceFunction: DistanceFunction)(implicit rng: Random): Iterator[State] =
+    Iterator.iterate(initialState)(step(model, priors, distanceFunction)).takeWhileInclusive(!finished(_))
 
 }

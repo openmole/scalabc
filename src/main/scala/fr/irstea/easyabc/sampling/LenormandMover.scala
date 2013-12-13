@@ -23,7 +23,7 @@ import fr.irstea.easyabc.WeightedSimulation
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution
 import scala.util.Random
 
-class LenormandMover extends ParticleMover {
+trait LenormandMover extends ParticleMover {
 
   /**
    * implementation based on the the implementation of Lenormand

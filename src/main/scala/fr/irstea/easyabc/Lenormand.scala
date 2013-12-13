@@ -79,8 +79,7 @@ trait Lenormand extends SequentialABC {
   def sample(
     previousState: LenormanState,
     nbSimus: Int,
-    priors: Seq[PriorFunction[Double]],
-    particleMover: ParticleMover)(implicit rng: Random): Seq[Seq[Double]] = {
+    priors: Seq[PriorFunction[Double]])(implicit rng: Random): Seq[Seq[Double]] = {
 
     val n_alpha = math.ceil(nbSimus * alpha).toInt
     val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
@@ -96,7 +95,7 @@ trait Lenormand extends SequentialABC {
               }
             }
         }
-      case Some(accepted) => (0 until nbSimusStep).map(_ => particleMover.move(accepted))
+      case Some(accepted) => (0 until nbSimusStep).map(_ => move(accepted))
     }
   }
 
@@ -114,22 +113,23 @@ trait Lenormand extends SequentialABC {
     )
     // selecting the simulations
     val acceptedRaw =
-      if (previousState.accepted == None) {
-        // initial step: all simulations are kept
-        for {
-          (t, ss) <- thetas zip summaryStats
-        } yield WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / thetas.length.toDouble)
-      } else {
-        // following steps: computing distances and weights
-        val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, previousState.varSummaryStats.get))).toSeq
-        val weights = computeWeights(previousState.accepted.get, newSimulations, priors)
-        // keeping only new simulations under tolerance threshold
-        val newAccepted =
+      previousState.accepted match {
+        case None =>
+          // initial step: all simulations are kept
           for {
-            (s, w) <- newSimulations zip weights
-            if s.distance <= previousState.tolerance
-          } yield WeightedSimulation(s, w / weights.sum)
-        previousState.accepted.get ++ newAccepted
+            (t, ss) <- thetas zip summaryStats
+          } yield WeightedSimulation(new Simulation(t, ss, distanceFunction.distance(ss, varSummaryStats)), weight = 1 / thetas.length.toDouble)
+        case Some(accepted) =>
+          // following steps: computing distances and weights
+          val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distanceFunction.distance(ss, previousState.varSummaryStats.get))).toSeq
+          val weights = computeWeights(accepted, newSimulations, priors)
+          // keeping only new simulations under tolerance threshold
+          val newAccepted =
+            for {
+              (s, w) <- newSimulations zip weights
+              if s.distance <= previousState.tolerance
+            } yield WeightedSimulation(s, w / weights.sum)
+          accepted ++ newAccepted
       }
 
     val accepted = acceptedRaw.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
@@ -153,10 +153,9 @@ trait Lenormand extends SequentialABC {
   override def step(
     model: Model,
     priors: Seq[PriorFunction[Double]],
-    distanceFunction: DistanceFunction,
-    particleMover: ParticleMover)(previousState: STATE)(implicit rng: Random): STATE = {
+    distanceFunction: DistanceFunction)(previousState: STATE)(implicit rng: Random): STATE = {
     // sampling thetas
-    val thetas = sample(previousState, simulations, priors, particleMover)
+    val thetas = sample(previousState, simulations, priors)
     // running simulations
     val summaryStats = runSimulations(model, thetas)
     analyse(priors, simulations, previousState, distanceFunction, thetas, summaryStats)

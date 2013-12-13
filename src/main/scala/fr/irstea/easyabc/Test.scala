@@ -23,6 +23,7 @@ import org.apache.commons.math3.random.{ RandomAdaptor, MersenneTwister }
 import fr.irstea.easyabc.distance.DefaultDistance
 import java.io.{ File, PrintWriter }
 import fr.irstea.easyabc._
+import fr.irstea.easyabc.sampling.JabotMover
 
 object Test extends App {
 
@@ -45,7 +46,7 @@ object Test extends App {
   //println(toyModel.apply(Seq(2.0, 3.0), 1))
 
   // initialization of Lenormand algorithm
-  val maxToy = new Lenormand {
+  val maxToy = new Lenormand with JabotMover {
     def summaryStatsTarget = Seq(5, 5)
     def simulations = 10
   }
@@ -56,7 +57,7 @@ object Test extends App {
   ).foreach(printState)
 
   // initialization of Beaumont algorithm
-  val abcToy = new Beaumont {
+  val abcToy = new Beaumont with JabotMover {
     def tolerances = Seq(5, 1, 0.5)
     def summaryStatsTarget = Seq(5, 5)
     def simulations = 10
@@ -73,7 +74,7 @@ object Test extends App {
   //println(traitModel.apply(Seq(4, 1, 0.5, -0.1), 1))
 
   // initialization of Beaumont algorithm
-  val abcTrait = new Beaumont {
+  val abcTrait = new Beaumont with JabotMover {
     def tolerances = Seq(80, 50, 20)
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
     def simulations = 5
@@ -85,7 +86,7 @@ object Test extends App {
   ).foreach(printState)
 
   // initialization of Lenormand algorithm
-  val maxTrait = new Lenormand {
+  val maxTrait = new Lenormand with JabotMover {
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
     def simulations = 20
   }
