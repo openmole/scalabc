@@ -81,18 +81,19 @@ class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summary
     val n_alpha = math.ceil(nbSimus * alpha).toInt
     val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
 
-    if (previousState.accepted == None)
-      lhs(nbSimusStep, priors.length).map {
-        row =>
-          (row zip priors).map {
-            case (sample, prior) => {
-              val unif = prior.asInstanceOf[Uniform]
-              unif.min + sample * (unif.max - unif.min)
+    previousState.accepted match {
+      case None =>
+        lhs(nbSimusStep, priors.length).map {
+          row =>
+            (row zip priors).map {
+              case (sample, prior) => {
+                val unif = prior.asInstanceOf[Uniform]
+                unif.min + sample * (unif.max - unif.min)
+              }
             }
-          }
-      }
-    else (0 until nbSimusStep).map(_ => particleMover.move(previousState.accepted.get))
-
+        }
+      case Some(accepted) => (0 until nbSimusStep).map(_ => particleMover.move(accepted))
+    }
   }
 
   def analyse(
