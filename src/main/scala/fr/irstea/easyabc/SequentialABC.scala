@@ -54,14 +54,11 @@ object SequentialABC {
     }
   }
 
-  def runSimulations(model: Model, thetas: Seq[Seq[Double]])(implicit rng: Random): Seq[Seq[Double]] =
-    (thetas.iterator zip Iterator.continually(rng.nextLong())).toSeq.map {
-      case (theta, seed) => model.apply(theta, seed)
-    }
-
 }
 
-trait SequentialABC <: ParticleMover with Distance {
+trait SequentialABC <: ParticleMover
+    with Distance
+    with Model {
 
   type STATE <: State
 
@@ -79,10 +76,13 @@ trait SequentialABC <: ParticleMover with Distance {
     previousState: STATE,
     simulations: Int)(implicit rng: Random): Seq[Seq[Double]]
 
-  def step(model: Model)(state: STATE)(implicit rng: Random): STATE
+  def step(state: STATE)(implicit rng: Random): STATE
 
-  def apply(
-    model: Model)(implicit rng: Random): Iterator[State] =
-    Iterator.iterate(initialState)(step(model)).takeWhileInclusive(!finished(_))
+  def run(implicit rng: Random): Iterator[State] =
+    Iterator.iterate(initialState)(step).takeWhileInclusive(!finished(_))
 
+  def runSimulations(thetas: Seq[Seq[Double]])(implicit rng: Random): Seq[Seq[Double]] =
+    (thetas.iterator zip Iterator.continually(rng.nextLong())).toSeq.map {
+      case (theta, seed) => model(theta, seed)
+    }
 }

@@ -147,12 +147,11 @@ trait Lenormand <: SequentialABC {
     )
   }
 
-  override def step(
-    model: Model)(previousState: STATE)(implicit rng: Random): STATE = {
+  override def step(previousState: STATE)(implicit rng: Random): STATE = {
     // sampling thetas
     val thetas = sample(previousState, simulations)
     // running simulations
-    val summaryStats = runSimulations(model, thetas)
+    val summaryStats = runSimulations(thetas)
     analyse(priors, simulations, previousState, thetas, summaryStats)
   }
 

@@ -29,7 +29,10 @@ import sys.process._
  * @param J (model parameters) the total number of individuals in the local community
  * @param ntrait (model parameters) the number of traits used
  */
-class TraitModel(val J: Int = 500, val ntrait: Int = 1) extends Model {
+trait TraitModel extends Model {
+
+  def J = 500
+  def ntrait = 1
 
   /**
    *
@@ -38,7 +41,7 @@ class TraitModel(val J: Int = 500, val ntrait: Int = 1) extends Model {
    * @return four summary statistics: the species richness of the community ‘S’, its Shannon's index ‘H’,
    *         the mean of the trait value among individuals ‘MTV’ and the skewness of the trait value distribution ‘STV’
    */
-  override def apply(thetas: Seq[Double], seed: Long): Seq[Double] = {
+  override def model(thetas: Seq[Double], seed: Long): Seq[Double] = {
     val inputFile = new File("./input")
     val writer = new FileWriter(inputFile)
     try {

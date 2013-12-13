@@ -19,9 +19,9 @@ package fr.irstea.easyabc.model.examples
 
 import fr.irstea.easyabc.model.Model
 
-class ToyModel extends Model {
+trait ToyModel extends Model {
 
-  override def apply(thetas: Seq[Double], seed: Long): Seq[Double] = {
+  override def model(thetas: Seq[Double], seed: Long): Seq[Double] = {
     val random = new util.Random(seed)
     Seq(thetas(0) + thetas(1) + random.nextDouble, thetas(0) * thetas(1) + random.nextDouble)
   }

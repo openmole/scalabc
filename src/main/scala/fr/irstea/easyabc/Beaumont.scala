@@ -98,8 +98,7 @@ trait Beaumont extends SequentialABC {
         case Some(accepted) => move(accepted)
       })
 
-  override def step(
-    model: Model)(previousState: STATE)(implicit rng: Random): BeaumontState = {
+  override def step(previousState: STATE)(implicit rng: Random): BeaumontState = {
     var varSummaryStats: Seq[Double] = Nil
     var nbSimulated = 0
     val newAccepted = ListBuffer.empty[Simulation]
@@ -108,7 +107,7 @@ trait Beaumont extends SequentialABC {
       val remainingSimusForThisStep = simulations - newAccepted.size
       val thetas = sample(previousState, remainingSimusForThisStep)
       // running simulations
-      val summaryStats = runSimulations(model, thetas)
+      val summaryStats = runSimulations(thetas)
       // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
       varSummaryStats = previousState.varSummaryStats.getOrElse(
         for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)

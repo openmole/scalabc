@@ -40,56 +40,48 @@ object Test extends App {
   // init a RNG
   implicit val rng = new util.Random(new RandomAdaptor(new MersenneTwister(1)))
 
-  // our model to explore
-  val toyModel = new ToyModel
   // a test on our model
   //println(toyModel.apply(Seq(2.0, 3.0), 1))
 
   // initialization of Lenormand algorithm
-  val maxToy = new Lenormand with JabotMover with DefaultDistance {
+  val maxToy = new Lenormand with JabotMover with DefaultDistance with ToyModel {
     def summaryStatsTarget = Seq(5, 5)
     def simulations = 10
     def priors = Seq(Uniform(0.0, 10.0), Uniform(0.0, 10.0))
   }
   //run the algorithm
-  maxToy.apply(model = toyModel
-  ).foreach(printState)
+  maxToy.run.foreach(printState)
 
   // initialization of Beaumont algorithm
-  val abcToy = new Beaumont with JabotMover with DefaultDistance {
+  val abcToy = new Beaumont with JabotMover with DefaultDistance with ToyModel {
     def tolerances = Seq(5, 1, 0.5)
     def summaryStatsTarget = Seq(5, 5)
     def simulations = 10
     def priors = Seq(Uniform(0.0, 10.0), Uniform(0.0, 10.0))
   }
 
-  abcToy.apply(model = toyModel
-  ).foreach(printState)
+  abcToy.run.foreach(printState)
 
-  // an other model
-  val traitModel = new TraitModel(500, 1)
   // a test on our model
   //println(traitModel.apply(Seq(4, 1, 0.5, -0.1), 1))
 
   // initialization of Beaumont algorithm
-  val abcTrait = new Beaumont with JabotMover with DefaultDistance {
+  val abcTrait = new Beaumont with JabotMover with DefaultDistance with TraitModel {
     def tolerances = Seq(80, 50, 20)
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
     def simulations = 5
     def priors = Seq(Uniform(3.0, 5.0), Uniform(-2.3, 1.6), Uniform(-25, 125), Uniform(-0.7, 3.2))
   }
   //run the algorithm
-  abcTrait.apply(model = traitModel
-  ).foreach(printState)
+  abcTrait.run.foreach(printState)
 
   // initialization of Lenormand algorithm
-  val maxTrait = new Lenormand with JabotMover with DefaultDistance {
+  val maxTrait = new Lenormand with JabotMover with DefaultDistance with TraitModel {
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
     def simulations = 20
     def priors = Seq(Uniform(3.0, 5.0), Uniform(-2.3, 1.6), Uniform(-25, 125), Uniform(-0.7, 3.2))
   }
   //run the algorithm
-  maxTrait.apply(model = traitModel
-  ).foreach(printState)
+  maxTrait.run.foreach(printState)
 
 }
