@@ -1,6 +1,8 @@
-name := "easyabc-scala"
+name := "scalabc"
 
-scalaVersion := "2.10.2"
+organization := "fr.irstea"
+
+scalaVersion := "2.10.3"
 
 libraryDependencies += "org.scalanlp" % "breeze-math_2.10" % "0.4"
 
