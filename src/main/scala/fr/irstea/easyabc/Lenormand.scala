@@ -153,14 +153,13 @@ trait Lenormand extends SequentialABC {
   override def step(
     model: Model,
     priors: Seq[PriorFunction[Double]],
-    nbSimus: Int,
     distanceFunction: DistanceFunction,
     particleMover: ParticleMover)(previousState: STATE)(implicit rng: Random): STATE = {
     // sampling thetas
-    val thetas = sample(previousState, nbSimus, priors, particleMover)
+    val thetas = sample(previousState, simulations, priors, particleMover)
     // running simulations
     val summaryStats = runSimulations(model, thetas)
-    analyse(priors, nbSimus, previousState, distanceFunction, thetas, summaryStats)
+    analyse(priors, simulations, previousState, distanceFunction, thetas, summaryStats)
   }
 
   def computeWeights(simulations: Seq[Simulation], previousState: State, varSummaryStats: Seq[Double], thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]],

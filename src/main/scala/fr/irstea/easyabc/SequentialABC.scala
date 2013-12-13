@@ -67,6 +67,7 @@ trait SequentialABC {
 
   def initialState: STATE
   def finished(s: STATE): Boolean
+  def simulations: Int
 
   def computeWeights(
     previouslyAccepted: Seq[WeightedSimulation],
@@ -75,23 +76,21 @@ trait SequentialABC {
 
   def sample(
     previousState: STATE,
-    nbSimus: Int,
+    simulations: Int,
     priors: Seq[PriorFunction[Double]],
     particleMover: ParticleMover)(implicit rng: Random): Seq[Seq[Double]]
 
   def step(
     model: Model,
     priors: Seq[PriorFunction[Double]],
-    nbSimus: Int,
     distanceFunction: DistanceFunction,
     particleMover: ParticleMover)(state: STATE)(implicit rng: Random): STATE
 
   def apply(
     model: Model,
     priors: Seq[PriorFunction[Double]],
-    nbSimus: Int,
     distanceFunction: DistanceFunction,
     particleMover: ParticleMover = new JabotMoving())(implicit rng: Random): Iterator[State] =
-    Iterator.iterate(initialState)(step(model, priors, nbSimus, distanceFunction, particleMover)).takeWhileInclusive(!finished(_))
+    Iterator.iterate(initialState)(step(model, priors, distanceFunction, particleMover)).takeWhileInclusive(!finished(_))
 
 }

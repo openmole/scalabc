@@ -47,11 +47,11 @@ object Test extends App {
   // initialization of Lenormand algorithm
   val maxToy = new Lenormand {
     def summaryStatsTarget = Seq(5, 5)
+    def simulations = 10
   }
   //run the algorithm
   maxToy.apply(model = toyModel,
     priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
-    nbSimus = 10,
     distanceFunction = new DefaultDistance(maxToy.summaryStatsTarget)
   ).foreach(printState)
 
@@ -59,11 +59,11 @@ object Test extends App {
   val abcToy = new Beaumont {
     def tolerances = Seq(5, 1, 0.5)
     def summaryStatsTarget = Seq(5, 5)
+    def simulations = 10
   }
 
   abcToy.apply(model = toyModel,
     priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
-    nbSimus = 10,
     distanceFunction = new DefaultDistance(abcToy.summaryStatsTarget)
   ).foreach(printState)
 
@@ -76,22 +76,22 @@ object Test extends App {
   val abcTrait = new Beaumont {
     def tolerances = Seq(80, 50, 20)
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
+    def simulations = 5
   }
   //run the algorithm
   abcTrait.apply(model = traitModel,
     priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
-    nbSimus = 5,
     distanceFunction = new DefaultDistance(abcTrait.summaryStatsTarget)
   ).foreach(printState)
 
   // initialization of Lenormand algorithm
   val maxTrait = new Lenormand {
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
+    def simulations = 20
   }
   //run the algorithm
   maxTrait.apply(model = traitModel,
     priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
-    nbSimus = 20,
     distanceFunction = new DefaultDistance(maxToy.summaryStatsTarget)
   ).foreach(printState)
 

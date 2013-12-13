@@ -102,15 +102,14 @@ trait Beaumont extends SequentialABC {
   override def step(
     model: Model,
     priors: Seq[PriorFunction[Double]],
-    nbSimus: Int,
     distanceFunction: DistanceFunction,
     particleMover: ParticleMover)(previousState: STATE)(implicit rng: Random): BeaumontState = {
     var varSummaryStats: Seq[Double] = Nil
     var nbSimulated = 0
     val newAccepted = ListBuffer.empty[Simulation]
-    while (newAccepted.size < nbSimus) {
+    while (newAccepted.size < simulations) {
       // we need this amount of accepted simulations to reach nbSimus
-      val remainingSimusForThisStep = nbSimus - newAccepted.size
+      val remainingSimusForThisStep = simulations - newAccepted.size
       val thetas = sample(previousState, remainingSimusForThisStep, priors, particleMover)
       // running simulations
       val summaryStats = runSimulations(model, thetas)
@@ -126,12 +125,13 @@ trait Beaumont extends SequentialABC {
     } // until we get nbSimus simulations below the tolerance threshold
     // compute weights
     val weights: Seq[Double] =
-      if (previousState.accepted == None) {
-        // initial step
-        Array.fill(nbSimus)(1 / nbSimus.toDouble)
-      } else {
-        // following steps
-        computeWeights(previousState.accepted.get, newAccepted, priors)
+      previousState.accepted match {
+        case None =>
+          // initial step
+          Array.fill(simulations)(1 / simulations.toDouble)
+        case Some(accepted) =>
+          // following steps
+          computeWeights(accepted, newAccepted, priors)
       }
     val sumWeights = weights.sum
     // go to the next tolerance
