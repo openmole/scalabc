@@ -1,5 +1,3 @@
-package fr.irstea.easyabc
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -17,13 +15,15 @@ package fr.irstea.easyabc
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package fr.irstea.easyabc
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
-import fr.irstea.easyabc.model.prior.Uniform
 import org.apache.commons.math3.random.MersenneTwister
 import fr.irstea.easyabc.sampling.JabotMover
 import fr.irstea.easyabc.distance.DefaultDistance
+import fr.irstea.easyabc.prior.Uniform
 
 @RunWith(classOf[JUnitRunner])
 class BeaumontTest extends FunSuite {
@@ -54,13 +54,14 @@ class BeaumontTest extends FunSuite {
       Simulation(List(2.3285151599006944, 2.1296553040834114), List(5.1857341440169735, 5.642158132680992), 0.8278922766979653)
     )
     implicit val rng = new MersenneTwister(42)
-    val prior = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0))
     val beaumont = new Beaumont with JabotMover with DefaultDistance {
       def tolerances = Seq(5, 1)
       def summaryStatsTarget = Seq(5, 5)
       def simulations = ???
+      def priors = Seq(Uniform(0.0, 10.0), Uniform(0.0, 10.0))
+      def model(input: Seq[Double], seed: Long) = ???
     }
-    val weights = beaumont.computeWeights(previouslyAccepted, newAccepted, prior)
+    val weights = beaumont.computeWeights(previouslyAccepted, newAccepted)
     // results computed in R with EasyABC 1.2.2
     val expectedWeights = Seq(3.9712876632648944, 4.208706219310921, 4.323267769411762, 4.178086058368066, 4.215553932293464, 4.473176741121306, 3.951590130569026, 4.095066779054165, 3.987032075397982, 3.9571909676677883)
     (weights zip expectedWeights).map {

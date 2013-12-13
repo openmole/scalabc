@@ -1,5 +1,3 @@
-package fr.irstea.easyabc
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -17,13 +15,15 @@ package fr.irstea.easyabc
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package fr.irstea.easyabc
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
-import fr.irstea.easyabc.model.prior.Uniform
 import org.apache.commons.math3.random.MersenneTwister
 import fr.irstea.easyabc.sampling.JabotMover
 import fr.irstea.easyabc.distance.DefaultDistance
+import fr.irstea.easyabc.prior.Uniform
 
 @RunWith(classOf[JUnitRunner])
 class LenormandTest extends FunSuite {
@@ -54,12 +54,13 @@ class LenormandTest extends FunSuite {
       Simulation(List(2.3285151599006944, 2.1296553040834114), List(5.1857341440169735, 5.642158132680992), 0.8278922766979653)
     )
     implicit val rng = new MersenneTwister(42)
-    val prior = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0))
     val lenormand = new Lenormand with JabotMover with DefaultDistance {
       def summaryStatsTarget = Seq(5, 5)
       def simulations = ???
+      def priors = Seq(Uniform(0.0, 10.0), Uniform(0.0, 10.0))
+      def model(input: Seq[Double], seed: Long) = ???
     }
-    val weights = lenormand.computeWeights(previouslyAccepted, newAccepted, prior)
+    val weights = lenormand.computeWeights(previouslyAccepted, newAccepted)
     // results computed in R with EasyABC 1.2.2
     val expectedWeights = Seq(0.4316663, 0.4573844, 0.4679478, 0.4518792, 0.4556170, 0.4866968, 0.4309326, 0.4505411, 0.4362668, 0.4349588)
     (weights zip expectedWeights).map {

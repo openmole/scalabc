@@ -20,8 +20,7 @@ package fr.irstea.easyabc
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
-import breeze.linalg.{DenseMatrix, DenseVector}
-import fr.irstea.easyabc.Tools.covarianceWeighted
+import breeze.linalg.{ DenseMatrix, DenseVector }
 
 @RunWith(classOf[JUnitRunner])
 class ToolsTest extends FunSuite {

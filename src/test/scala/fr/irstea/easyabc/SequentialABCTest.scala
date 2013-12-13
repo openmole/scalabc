@@ -1,5 +1,3 @@
-package fr.irstea.easyabc
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -17,10 +15,11 @@ package fr.irstea.easyabc
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package fr.irstea.easyabc
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
-import fr.irstea.easyabc.Tools.pickTheta
 import org.apache.commons.math3.random.AbstractRandomGenerator
 
 @RunWith(classOf[JUnitRunner])
@@ -39,7 +38,7 @@ class SequentialABCTest extends FunSuite {
   }
 
   test("pickTheta") {
-    implicit val rng = new FakeRandom()
+    implicit val rng = apacheRandomToScalaRandom(new FakeRandom())
     val factor = 4
     val thetas = List(WeightedSimulation(null, factor * 0.5),
       WeightedSimulation(null, factor * 0.2),
