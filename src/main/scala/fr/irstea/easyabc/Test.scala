@@ -45,7 +45,9 @@ object Test extends App {
   //println(toyModel.apply(Seq(2.0, 3.0), 1))
 
   // initialization of Lenormand algorithm
-  val maxToy = new Lenormand(summaryStatsTarget = Seq(5, 5))
+  val maxToy = new Lenormand {
+    def summaryStatsTarget = Seq(5, 5)
+  }
   //run the algorithm
   maxToy.apply(model = toyModel,
     priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
@@ -76,7 +78,9 @@ object Test extends App {
   ).foreach(printState)
 
   // initialization of Lenormand algorithm
-  val maxTrait = new Lenormand(summaryStatsTarget = Seq(100, 2.5, 20, 30000))
+  val maxTrait = new Lenormand {
+    def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
+  }
   //run the algorithm
   maxTrait.apply(model = traitModel,
     priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),

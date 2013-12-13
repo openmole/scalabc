@@ -36,9 +36,13 @@ case class LenormanState(
 
 import SequentialABC._
 
-class Lenormand(val alpha: Double = 0.5, val pAccMin: Double = 0.05, val summaryStatsTarget: Seq[Double]) extends SequentialABC {
+trait Lenormand extends SequentialABC {
 
   type STATE = LenormanState
+
+  def alpha: Double = 0.5
+  def pAccMin: Double = 0.05
+  def summaryStatsTarget: Seq[Double]
 
   def initialState = LenormanState(
     iteration = 0,

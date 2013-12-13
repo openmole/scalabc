@@ -53,7 +53,9 @@ class LenormandTest extends FunSuite {
     )
     implicit val rng = new MersenneTwister(42)
     val prior = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0))
-    val lenormand = new Lenormand(summaryStatsTarget = Seq(5, 5))
+    val lenormand = new Lenormand{
+      def summaryStatsTarget = Seq(5, 5)
+    }
     val weights = lenormand.computeWeights(previouslyAccepted, newAccepted, prior)
     // results computed in R with EasyABC 1.2.2
     val expectedWeights = Seq(0.4316663, 0.4573844, 0.4679478, 0.4518792, 0.4556170, 0.4866968, 0.4309326, 0.4505411, 0.4362668, 0.4349588)
