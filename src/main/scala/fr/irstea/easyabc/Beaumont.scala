@@ -31,7 +31,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import SequentialABC._
 import scala.util.Random
 
-class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double]) extends SequentialABC {
+trait Beaumont extends SequentialABC {
 
   case class BeaumontState(
       iteration: Int,
@@ -45,6 +45,8 @@ class Beaumont(val tolerances: Seq[Double], val summaryStatsTarget: Seq[Double])
 
   type STATE = BeaumontState
 
+  def tolerances: Seq[Double]
+  def summaryStatsTarget: Seq[Double]
   def initialState = BeaumontState(0, 0, None, None, 0, 0)
   def finished(s: STATE): Boolean = s.toleranceIndex >= tolerances.size
 

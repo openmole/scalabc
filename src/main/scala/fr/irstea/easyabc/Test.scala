@@ -56,7 +56,11 @@ object Test extends App {
   ).foreach(printState)
 
   // initialization of Beaumont algorithm
-  var abcToy = new Beaumont(tolerances = Seq(5, 1, 0.5), summaryStatsTarget = Seq(5, 5))
+  val abcToy = new Beaumont {
+    def tolerances = Seq(5, 1, 0.5)
+    def summaryStatsTarget = Seq(5, 5)
+  }
+
   abcToy.apply(model = toyModel,
     priors = Seq(new Uniform(0.0, 10.0), new Uniform(0.0, 10.0)),
     nbSimus = 10,
@@ -69,7 +73,10 @@ object Test extends App {
   //println(traitModel.apply(Seq(4, 1, 0.5, -0.1), 1))
 
   // initialization of Beaumont algorithm
-  val abcTrait = new Beaumont(tolerances = Seq(80, 50, 20), summaryStatsTarget = Seq(100, 2.5, 20, 30000))
+  val abcTrait = new Beaumont {
+    def tolerances = Seq(80, 50, 20)
+    def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
+  }
   //run the algorithm
   abcTrait.apply(model = traitModel,
     priors = Seq(new Uniform(3.0, 5.0), new Uniform(-2.3, 1.6), new Uniform(-25, 125), new Uniform(-0.7, 3.2)),
