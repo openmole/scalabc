@@ -71,12 +71,10 @@ trait Lenormand <: ABC {
     }
   }
 
-  def sample(
-    previousState: LenormanState,
-    nbSimus: Int)(implicit rng: Random): Seq[Seq[Double]] = {
+  def sample(previousState: LenormanState)(implicit rng: Random): Seq[Seq[Double]] = {
 
-    val n_alpha = math.ceil(nbSimus * alpha).toInt
-    val nbSimusStep = if (previousState.accepted == None) nbSimus else nbSimus - n_alpha
+    val n_alpha = math.ceil(simulations * alpha).toInt
+    val nbSimusStep = if (previousState.accepted == None) simulations else simulations - n_alpha
 
     previousState.accepted match {
       case None =>
@@ -92,11 +90,10 @@ trait Lenormand <: ABC {
   }
 
   def analyse(
-    nbSimus: Int,
     previousState: LenormanState,
     thetas: Seq[Seq[Double]],
     summaryStats: Seq[Seq[Double]]): STATE = {
-    val n_alpha = math.ceil(nbSimus * alpha).toInt
+    val n_alpha = math.ceil(simulations * alpha).toInt
     // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
     val varSummaryStats =
       previousState.varSummaryStats.getOrElse(
@@ -111,7 +108,7 @@ trait Lenormand <: ABC {
           // initial step: all simulations are kept
           for {
             (t, ss) <- thetas zip summaryStats
-          } yield WeightedSimulation(new Simulation(t, ss, distance(ss, varSummaryStats)), weight = 1 / thetas.length.toDouble)
+          } yield WeightedSimulation(Simulation(t, ss, distance(ss, varSummaryStats)), weight = 1 / thetas.length.toDouble)
         case Some(accepted) =>
           // following steps: computing distances and weights
           val newSimulations =
@@ -147,10 +144,10 @@ trait Lenormand <: ABC {
 
   override def step(previousState: STATE)(implicit rng: Random): STATE = {
     // sampling thetas
-    val thetas = sample(previousState, simulations)
+    val thetas = sample(previousState)
     // running simulations
     val summaryStats = runSimulations(thetas)
-    analyse(simulations, previousState, thetas, summaryStats)
+    analyse(previousState, thetas, summaryStats)
   }
 
   def computeWeights(

@@ -68,14 +68,6 @@ trait ABC <: ParticleMover
   def summaryStatsTarget: Seq[Double]
   def priors: Seq[PriorFunction]
 
-  def computeWeights(
-    previouslyAccepted: Seq[WeightedSimulation],
-    newAccepted: Seq[Simulation]): Seq[Double]
-
-  def sample(
-    previousState: STATE,
-    simulations: Int)(implicit rng: Random): Seq[Seq[Double]]
-
   def step(state: STATE)(implicit rng: Random): STATE
 
   def run(implicit rng: Random): Iterator[State] =
