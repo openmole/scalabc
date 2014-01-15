@@ -21,6 +21,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
 import org.apache.commons.math3.random.AbstractRandomGenerator
+import fr.irstea.scalabc.algorithm.WeightedSimulation
 
 @RunWith(classOf[JUnitRunner])
 class SequentialABCTest extends FunSuite {

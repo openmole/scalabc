@@ -23,6 +23,7 @@ import breeze.linalg._
 import breeze.numerics
 import scala.util.Random
 import org.apache.commons.math3.random.RandomDataGenerator
+import fr.irstea.scalabc.algorithm.WeightedSimulation
 
 trait JabotMover extends ParticleMover {
   /**

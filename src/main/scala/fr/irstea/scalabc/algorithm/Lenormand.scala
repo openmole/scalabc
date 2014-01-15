@@ -15,12 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.scalabc
+package fr.irstea.scalabc.algorithm
 
 import fr.irstea.scalabc.prior.{ Uniform, PriorFunction }
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import breeze.linalg._
 import util.Random
+import fr.irstea.scalabc._
+import scala.Some
+import fr.irstea.scalabc.prior.Uniform
 
 case class LenormanState(
   iteration: Int,
@@ -38,7 +41,7 @@ trait Lenormand <: ABC {
   type STATE = LenormanState
 
   def alpha: Double = 0.5
-  def pAccMin: Double = 0.05
+  def minimumProportionOfAccepted: Double = 0.05
   def priors: Seq[Uniform]
 
   def initialState = LenormanState(
@@ -46,11 +49,11 @@ trait Lenormand <: ABC {
     tolerance = 0.0,
     None,
     None,
-    pAccMin + 1,
+    minimumProportionOfAccepted + 1,
     0,
     0)
 
-  def finished(s: STATE) = s.proportionOfAccepted <= pAccMin
+  def finished(s: STATE) = s.proportionOfAccepted <= minimumProportionOfAccepted
 
   def computeWeights(previouslyAccepted: Seq[WeightedSimulation], newAccepted: Seq[Simulation]): Seq[Double] = {
     val nbParam = previouslyAccepted(0).simulation.theta.length
@@ -124,7 +127,7 @@ trait Lenormand <: ABC {
           accepted ++ newAccepted
       }
 
-    val accepted = acceptedRaw.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha)
+    val accepted = acceptedRaw.sortWith(_.simulation.distance < _.simulation.distance).slice(0, n_alpha).toVector
     val nextTolerance = accepted.last.simulation.distance
     val proportionOfAccepted =
       previousState.accepted match {
@@ -140,14 +143,6 @@ trait Lenormand <: ABC {
       thetas.size,
       previousState.evaluations + thetas.size
     )
-  }
-
-  override def step(previousState: STATE)(implicit rng: Random): STATE = {
-    // sampling thetas
-    val thetas = sample(previousState)
-    // running simulations
-    val summaryStats = runSimulations(thetas)
-    analyse(previousState, thetas, summaryStats)
   }
 
   def computeWeights(

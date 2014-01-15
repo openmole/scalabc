@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.scalabc
+package fr.irstea.scalabc.algorithm
 
 import fr.irstea.scalabc.prior.PriorFunction
 import fr.irstea.scalabc.model.Model
@@ -57,8 +57,7 @@ object ABC {
 }
 
 trait ABC <: ParticleMover
-    with Distance
-    with Model {
+    with Distance {
 
   type STATE <: State
 
@@ -68,13 +67,4 @@ trait ABC <: ParticleMover
   def summaryStatsTarget: Seq[Double]
   def priors: Seq[PriorFunction]
 
-  def step(state: STATE)(implicit rng: Random): STATE
-
-  def run(implicit rng: Random): Iterator[State] =
-    Iterator.iterate(initialState)(step).takeWhileInclusive(!finished(_))
-
-  def runSimulations(thetas: Seq[Seq[Double]])(implicit rng: Random): Seq[Seq[Double]] =
-    (thetas.iterator zip Iterator.continually(rng.nextLong())).toSeq.map {
-      case (theta, seed) => model(theta, seed)
-    }
 }

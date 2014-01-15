@@ -23,6 +23,7 @@ import math._
 import breeze.linalg._
 import breeze.linalg.{ sum => msum }
 import breeze.numerics.sqrt
+import fr.irstea.scalabc.algorithm.WeightedSimulation
 
 package object scalabc {
   implicit class IteratorExtension[A](i: Iterator[A]) {

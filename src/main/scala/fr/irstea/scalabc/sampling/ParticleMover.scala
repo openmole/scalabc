@@ -17,8 +17,8 @@
 
 package fr.irstea.scalabc.sampling
 
-import fr.irstea.scalabc.WeightedSimulation
 import util.Random
+import fr.irstea.scalabc.algorithm.WeightedSimulation
 
 trait ParticleMover {
   def move(simulations: Seq[WeightedSimulation])(implicit rng: Random): Seq[Double]

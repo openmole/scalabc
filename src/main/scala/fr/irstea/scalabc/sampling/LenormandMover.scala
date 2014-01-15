@@ -19,9 +19,9 @@ package fr.irstea.scalabc.sampling
 
 import fr.irstea.scalabc._
 import breeze.linalg._
-import fr.irstea.scalabc.WeightedSimulation
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution
 import scala.util.Random
+import fr.irstea.scalabc.algorithm.WeightedSimulation
 
 trait LenormandMover extends ParticleMover {
 

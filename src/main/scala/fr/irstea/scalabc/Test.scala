@@ -24,6 +24,8 @@ import fr.irstea.scalabc.distance.DefaultDistance
 import java.io.{ File, PrintWriter }
 import fr.irstea.scalabc._
 import fr.irstea.scalabc.sampling.JabotMover
+import fr.irstea.scalabc.executer.SequentialExecuter
+import fr.irstea.scalabc.algorithm.{ Lenormand, Beaumont, State }
 
 object Test extends App {
 
@@ -44,7 +46,7 @@ object Test extends App {
   //println(toyModel.apply(Seq(2.0, 3.0), 1))
 
   // initialization of Lenormand algorithm
-  val maxToy = new Lenormand with JabotMover with DefaultDistance with ToyModel {
+  val maxToy = new LenormandExecuter with JabotMover with DefaultDistance with ToyModel {
     def summaryStatsTarget = Seq(5, 5)
     def simulations = 10
     def priors = Seq(Uniform(0.0, 10.0), Uniform(0.0, 10.0))
@@ -53,7 +55,7 @@ object Test extends App {
   maxToy.run.foreach(printState)
 
   // initialization of Beaumont algorithm
-  val abcToy = new Beaumont with JabotMover with DefaultDistance with ToyModel {
+  val abcToy = new BeaumontExecuter with JabotMover with DefaultDistance with ToyModel {
     def tolerances = Seq(5, 1, 0.5)
     def summaryStatsTarget = Seq(5, 5)
     def simulations = 10
@@ -66,7 +68,7 @@ object Test extends App {
   //println(traitModel.apply(Seq(4, 1, 0.5, -0.1), 1))
 
   // initialization of Beaumont algorithm
-  val abcTrait = new Beaumont with JabotMover with DefaultDistance with TraitModel {
+  val abcTrait = new BeaumontExecuter with JabotMover with DefaultDistance with TraitModel {
     def tolerances = Seq(80, 50, 20)
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
     def simulations = 5
@@ -76,7 +78,7 @@ object Test extends App {
   abcTrait.run.foreach(printState)
 
   // initialization of Lenormand algorithm
-  val maxTrait = new Lenormand with JabotMover with DefaultDistance with TraitModel {
+  val maxTrait = new LenormandExecuter with JabotMover with DefaultDistance with TraitModel {
     def summaryStatsTarget = Seq(100, 2.5, 20, 30000)
     def simulations = 20
     def priors = Seq(Uniform(3.0, 5.0), Uniform(-2.3, 1.6), Uniform(-25, 125), Uniform(-0.7, 3.2))
