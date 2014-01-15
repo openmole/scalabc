@@ -18,3 +18,4 @@ publishTo <<= version { (v: String) =>
   else Some("releases"  at maven + "releases")
 }
 
+releaseSettings
