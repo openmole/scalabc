@@ -38,7 +38,7 @@ trait State {
   def evaluations: Int
 }
 
-object SequentialABC {
+object ABC {
   /**
    * computes particle weights
    */
@@ -56,7 +56,7 @@ object SequentialABC {
 
 }
 
-trait SequentialABC <: ParticleMover
+trait ABC <: ParticleMover
     with Distance
     with Model {
 

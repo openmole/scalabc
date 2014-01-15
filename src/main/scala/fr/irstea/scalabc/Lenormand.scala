@@ -31,9 +31,9 @@ case class LenormanState(
   evaluationsForStep: Int,
   evaluations: Int) extends State
 
-import SequentialABC._
+import ABC._
 
-trait Lenormand <: SequentialABC {
+trait Lenormand <: ABC {
 
   type STATE = LenormanState
 

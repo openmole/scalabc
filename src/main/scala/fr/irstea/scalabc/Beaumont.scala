@@ -28,10 +28,10 @@ import breeze.stats.DescriptiveStats
 import breeze.linalg.{ pow => bpow, DenseVector }
 import breeze.numerics.{ exp => bexp }
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
-import SequentialABC._
+import ABC._
 import scala.util.Random
 
-trait Beaumont extends SequentialABC {
+trait Beaumont extends ABC {
 
   case class BeaumontState(
       iteration: Int,
