@@ -1,4 +1,4 @@
-package fr.irstea.easyabc
+package fr.irstea.scalabc
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -17,13 +17,13 @@ package fr.irstea.easyabc
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import fr.irstea.easyabc.model.examples.{ TraitModel, ToyModel }
-import fr.irstea.easyabc.prior.Uniform
+import fr.irstea.scalabc.model.examples.{ TraitModel, ToyModel }
+import fr.irstea.scalabc.prior.Uniform
 import org.apache.commons.math3.random.{ RandomAdaptor, MersenneTwister }
-import fr.irstea.easyabc.distance.DefaultDistance
+import fr.irstea.scalabc.distance.DefaultDistance
 import java.io.{ File, PrintWriter }
-import fr.irstea.easyabc._
-import fr.irstea.easyabc.sampling.JabotMover
+import fr.irstea.scalabc._
+import fr.irstea.scalabc.sampling.JabotMover
 
 object Test extends App {
 

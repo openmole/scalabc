@@ -24,7 +24,7 @@ import breeze.linalg._
 import breeze.linalg.{ sum => msum }
 import breeze.numerics.sqrt
 
-package object easyabc {
+package object scalabc {
   implicit class IteratorExtension[A](i: Iterator[A]) {
     def takeWhileInclusive(p: A => Boolean) = {
       val (a, b) = i.span(p)

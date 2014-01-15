@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.easyabc.prior
+package fr.irstea.scalabc.prior
 
 import scala.util.Random
 

@@ -1,4 +1,4 @@
-package fr.irstea.easyabc.distance
+package fr.irstea.scalabc
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -20,18 +20,19 @@ package fr.irstea.easyabc.distance
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
+import breeze.linalg.{ DenseMatrix, DenseVector }
 
 @RunWith(classOf[JUnitRunner])
-class DefaultDistanceTest extends FunSuite {
+class ToolsTest extends FunSuite {
 
-  test("distance") {
-    val target = Seq(0.0, 10.0)
-    val stats = Seq(-1.0, 9.0)
-    val variance = Seq(0.02, 0.02)
-    assert(
-      math.abs(
-        new DefaultDistance {
-          def summaryStatsTarget = target
-        }.distance(stats, variance) - 0.04) < 0.000001)
+  test("cov") {
+    val xy = DenseMatrix((1 to 10).toArray.map(_.toDouble), Array.concat((1 to 3).toArray, (5 to 8).toArray.reverse, (8 to 10).toArray).map(_.toDouble)).t
+    val w1 = DenseVector(0.0, 0.0, 0.0, 0.2, 0.2, 0.2, 0.2, 0.2, 0.0, 0.0)
+    val covmat = covarianceWeighted(xy, w1)
+    // expected result obtained with the function cov.wt in R 2.15.2
+    val expected = DenseMatrix((2.5, -0.5), (-0.5, 1.7))
+    (covmat.data zip expected.data).map {
+      case (x1, x2) => assert(math.abs(x1 - x2) <= 0.001)
+    }
   }
 }

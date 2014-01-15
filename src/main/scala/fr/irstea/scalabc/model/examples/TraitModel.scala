@@ -1,4 +1,4 @@
-package fr.irstea.easyabc.model.examples
+package fr.irstea.scalabc.model.examples
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -17,7 +17,7 @@ package fr.irstea.easyabc.model.examples
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import fr.irstea.easyabc.model.Model
+import fr.irstea.scalabc.model.Model
 import java.io.{ FileWriter, File }
 import scala.io.Source
 import sys.process._

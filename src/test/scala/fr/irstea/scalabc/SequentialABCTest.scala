@@ -1,5 +1,3 @@
-package fr.irstea.easyabc
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -17,22 +15,37 @@ package fr.irstea.easyabc
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package fr.irstea.scalabc
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
-import breeze.linalg.{ DenseMatrix, DenseVector }
+import org.apache.commons.math3.random.AbstractRandomGenerator
 
 @RunWith(classOf[JUnitRunner])
-class ToolsTest extends FunSuite {
+class SequentialABCTest extends FunSuite {
 
-  test("cov") {
-    val xy = DenseMatrix((1 to 10).toArray.map(_.toDouble), Array.concat((1 to 3).toArray, (5 to 8).toArray.reverse, (8 to 10).toArray).map(_.toDouble)).t
-    val w1 = DenseVector(0.0, 0.0, 0.0, 0.2, 0.2, 0.2, 0.2, 0.2, 0.0, 0.0)
-    val covmat = covarianceWeighted(xy, w1)
-    // expected result obtained with the function cov.wt in R 2.15.2
-    val expected = DenseMatrix((2.5, -0.5), (-0.5, 1.7))
-    (covmat.data zip expected.data).map {
-      case (x1, x2) => assert(math.abs(x1 - x2) <= 0.001)
+  class FakeRandom extends AbstractRandomGenerator {
+    val numbers = List(0.72, 0.4, 0.6, 0.99)
+    var i = 0
+
+    override def nextDouble(): Double = {
+      i += 1
+      numbers(i - 1)
     }
+
+    def setSeed(seed: Long) = {}
+  }
+
+  test("pickTheta") {
+    implicit val rng = apacheRandomToScalaRandom(new FakeRandom())
+    val factor = 4
+    val thetas = List(WeightedSimulation(null, factor * 0.5),
+      WeightedSimulation(null, factor * 0.2),
+      WeightedSimulation(null, factor * 0.3))
+    assert(pickTheta(thetas) eq thetas(2))
+    assert(pickTheta(thetas) eq thetas(0))
+    assert(pickTheta(thetas) eq thetas(1))
+    assert(pickTheta(thetas) eq thetas(2))
   }
 }

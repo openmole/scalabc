@@ -1,3 +1,5 @@
+package fr.irstea.scalabc.distance
+
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -15,11 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.easyabc.sampling
+trait Distance {
 
-import fr.irstea.easyabc.WeightedSimulation
-import util.Random
+  def summaryStatsTarget: Seq[Double]
 
-trait ParticleMover {
-  def move(simulations: Seq[WeightedSimulation])(implicit rng: Random): Seq[Double]
+  /**
+   *
+   * @param summaryStats
+   * @param initVariance  min(1, 1/empirical variances)
+   * @return
+   */
+  def distance(summaryStats: Seq[Double], initVariance: Seq[Double]): Double
 }

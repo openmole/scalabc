@@ -1,5 +1,3 @@
-package fr.irstea.easyabc.model.examples
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -17,13 +15,13 @@ package fr.irstea.easyabc.model.examples
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import fr.irstea.easyabc.model.Model
+package fr.irstea.scalabc.prior
 
-trait ToyModel extends Model {
+import org.apache.commons.math3.random.RandomDataGenerator
+import scala.util.Random
+import fr.irstea.scalabc._
 
-  override def model(thetas: Seq[Double], seed: Long): Seq[Double] = {
-    val random = new util.Random(seed)
-    Seq(thetas(0) + thetas(1) + random.nextDouble, thetas(0) * thetas(1) + random.nextDouble)
-  }
-
+case class Uniform(min: Double, max: Double) extends PriorFunction[Double] {
+  def value(implicit rng: Random) = new RandomDataGenerator(rng).nextUniform(min, max)
+  def density(value: Double): Double = 1 / (max - min)
 }

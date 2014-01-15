@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.easyabc
+package fr.irstea.scalabc
 
-import fr.irstea.easyabc.prior.{ Uniform, PriorFunction }
-import fr.irstea.easyabc.distance.Distance
+import fr.irstea.scalabc.prior.{ Uniform, PriorFunction }
+import fr.irstea.scalabc.distance.Distance
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import breeze.linalg._
 import util.Random

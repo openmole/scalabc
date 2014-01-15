@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.easyabc.sampling
+package fr.irstea.scalabc.sampling
 
-import fr.irstea.easyabc._
+import fr.irstea.scalabc._
 import breeze.linalg._
-import fr.irstea.easyabc.WeightedSimulation
+import fr.irstea.scalabc.WeightedSimulation
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution
 import scala.util.Random
 

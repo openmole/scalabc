@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.easyabc
+package fr.irstea.scalabc
 
-import fr.irstea.easyabc.model.Model
-import fr.irstea.easyabc.prior.PriorFunction
-import fr.irstea.easyabc.distance.Distance
+import fr.irstea.scalabc.model.Model
+import fr.irstea.scalabc.prior.PriorFunction
+import fr.irstea.scalabc.distance.Distance
 import scala.collection.mutable.ListBuffer
 import org.apache.commons.math3.random.RandomGenerator
 import scala.Some
-import fr.irstea.easyabc.sampling.ParticleMover
+import fr.irstea.scalabc.sampling.ParticleMover
 import breeze.stats.DescriptiveStats
 import breeze.linalg.{ pow => bpow, DenseVector }
 import breeze.numerics.{ exp => bexp }

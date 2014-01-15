@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.easyabc.sampling
+package fr.irstea.scalabc.sampling
 
-import fr.irstea.easyabc._
+import fr.irstea.scalabc._
 import breeze.linalg._
 import breeze.numerics
 import scala.util.Random
@@ -26,7 +26,7 @@ import org.apache.commons.math3.random.RandomDataGenerator
 
 trait JabotMover extends ParticleMover {
   /**
-   * Implementation based on those from Jabot in EasyABC R package
+   * Implementation based on those from Jabot in EasyABC R scalabc
    * @param simulations
    * @param rng
    * @return

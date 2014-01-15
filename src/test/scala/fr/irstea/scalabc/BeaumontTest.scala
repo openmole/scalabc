@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.easyabc
+package fr.irstea.scalabc
 
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
 import org.apache.commons.math3.random.MersenneTwister
-import fr.irstea.easyabc.sampling.JabotMover
-import fr.irstea.easyabc.distance.DefaultDistance
-import fr.irstea.easyabc.prior.Uniform
+import fr.irstea.scalabc.sampling.JabotMover
+import fr.irstea.scalabc.distance.DefaultDistance
+import fr.irstea.scalabc.prior.Uniform
 
 @RunWith(classOf[JUnitRunner])
 class BeaumontTest extends FunSuite {

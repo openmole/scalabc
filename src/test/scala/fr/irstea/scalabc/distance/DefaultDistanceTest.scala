@@ -1,3 +1,5 @@
+package fr.irstea.scalabc.distance
+
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -15,37 +17,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.irstea.easyabc
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
-import org.apache.commons.math3.random.AbstractRandomGenerator
 
 @RunWith(classOf[JUnitRunner])
-class SequentialABCTest extends FunSuite {
+class DefaultDistanceTest extends FunSuite {
 
-  class FakeRandom extends AbstractRandomGenerator {
-    val numbers = List(0.72, 0.4, 0.6, 0.99)
-    var i = 0
-
-    override def nextDouble(): Double = {
-      i += 1
-      numbers(i - 1)
-    }
-
-    def setSeed(seed: Long) = {}
-  }
-
-  test("pickTheta") {
-    implicit val rng = apacheRandomToScalaRandom(new FakeRandom())
-    val factor = 4
-    val thetas = List(WeightedSimulation(null, factor * 0.5),
-      WeightedSimulation(null, factor * 0.2),
-      WeightedSimulation(null, factor * 0.3))
-    assert(pickTheta(thetas) eq thetas(2))
-    assert(pickTheta(thetas) eq thetas(0))
-    assert(pickTheta(thetas) eq thetas(1))
-    assert(pickTheta(thetas) eq thetas(2))
+  test("distance") {
+    val target = Seq(0.0, 10.0)
+    val stats = Seq(-1.0, 9.0)
+    val variance = Seq(0.02, 0.02)
+    assert(
+      math.abs(
+        new DefaultDistance {
+          def summaryStatsTarget = target
+        }.distance(stats, variance) - 0.04) < 0.000001)
   }
 }

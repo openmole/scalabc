@@ -1,4 +1,4 @@
-package fr.irstea.easyabc.model
+package fr.irstea.scalabc.model
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>

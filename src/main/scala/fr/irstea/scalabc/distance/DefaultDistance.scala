@@ -1,4 +1,4 @@
-package fr.irstea.easyabc.distance
+package fr.irstea.scalabc.distance
 
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
@@ -16,16 +16,11 @@ package fr.irstea.easyabc.distance
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+trait DefaultDistance <: Distance {
 
-trait Distance {
-
-  def summaryStatsTarget: Seq[Double]
-
-  /**
-   *
-   * @param summaryStats
-   * @param initVariance  min(1, 1/empirical variances)
-   * @return
-   */
-  def distance(summaryStats: Seq[Double], initVariance: Seq[Double]): Double
+  def distance(summaryStats: Seq[Double], initVariance: Seq[Double]): Double = {
+    (initVariance, summaryStats, summaryStatsTarget).zipped.map {
+      case (v, ss, sst) => v * (ss - sst) * (ss - sst)
+    }.sum
+  }
 }
