@@ -19,7 +19,7 @@ package fr.irstea.scalabc.prior
 
 import scala.util.Random
 
-trait PriorFunction[T] {
-  def value(implicit rng: Random): T
-  def density(value: T): T
+trait PriorFunction {
+  def value(implicit rng: Random): Double
+  def density(value: Double): Double
 }

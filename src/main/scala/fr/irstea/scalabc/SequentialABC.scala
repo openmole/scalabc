@@ -44,7 +44,7 @@ object SequentialABC {
    */
   def computeWeightsPrior(
     particles: Seq[Simulation],
-    priors: Seq[PriorFunction[Double]]): Seq[Double] = {
+    priors: Seq[PriorFunction]): Seq[Double] = {
     for (particle <- particles.map(_.theta)) yield {
       var res = 1.0
       for ((param, prior) <- (particle, priors).zipped) {
@@ -66,7 +66,7 @@ trait SequentialABC <: ParticleMover
   def finished(s: STATE): Boolean
   def simulations: Int
   def summaryStatsTarget: Seq[Double]
-  def priors: Seq[PriorFunction[Double]]
+  def priors: Seq[PriorFunction]
 
   def computeWeights(
     previouslyAccepted: Seq[WeightedSimulation],

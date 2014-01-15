@@ -18,7 +18,6 @@
 package fr.irstea.scalabc
 
 import fr.irstea.scalabc.prior.{ Uniform, PriorFunction }
-import fr.irstea.scalabc.distance.Distance
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import breeze.linalg._
 import util.Random
@@ -40,6 +39,7 @@ trait Lenormand <: SequentialABC {
 
   def alpha: Double = 0.5
   def pAccMin: Double = 0.05
+  def priors: Seq[Uniform]
 
   def initialState = LenormanState(
     iteration = 0,
@@ -84,8 +84,7 @@ trait Lenormand <: SequentialABC {
           row =>
             (row zip priors).map {
               case (sample, prior) =>
-                val unif = prior.asInstanceOf[Uniform]
-                unif.min + sample * (unif.max - unif.min)
+                prior.min + sample * (prior.max - prior.min)
             }
         }
       case Some(accepted) => (0 until nbSimusStep).map(_ => move(accepted))

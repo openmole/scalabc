@@ -21,7 +21,7 @@ import org.apache.commons.math3.random.RandomDataGenerator
 import scala.util.Random
 import fr.irstea.scalabc._
 
-case class Uniform(min: Double, max: Double) extends PriorFunction[Double] {
+case class Uniform(min: Double, max: Double) extends PriorFunction {
   def value(implicit rng: Random) = new RandomDataGenerator(rng).nextUniform(min, max)
   def density(value: Double): Double = 1 / (max - min)
 }
