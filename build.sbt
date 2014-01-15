@@ -10,7 +10,7 @@ libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.2" % "test"
 
-//publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
+credentials += Credentials(Path.userHome / ".sbt" / "iscpif.credentials")
 
 publishTo <<= version { (v: String) =>
   val maven = "http://maven.iscpif.fr/"
