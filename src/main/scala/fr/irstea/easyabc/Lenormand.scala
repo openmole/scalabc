@@ -17,10 +17,8 @@
 
 package fr.irstea.easyabc
 
-import fr.irstea.easyabc.model.Model
 import fr.irstea.easyabc.prior.{ Uniform, PriorFunction }
 import fr.irstea.easyabc.distance.Distance
-import fr.irstea.easyabc.sampling.ParticleMover
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import breeze.linalg._
 import util.Random
@@ -69,9 +67,7 @@ trait Lenormand <: SequentialABC {
     }
     val tab_weight_prior = computeWeightsPrior(newAccepted, priors)
     (tab_weight_prior zip weights).map {
-      case (twp: Double, w: Double) => {
-        twp / (w * multi)
-      }
+      case (twp: Double, w: Double) => twp / (w * multi)
     }
   }
 
@@ -87,10 +83,9 @@ trait Lenormand <: SequentialABC {
         lhs(nbSimusStep, priors.length).map {
           row =>
             (row zip priors).map {
-              case (sample, prior) => {
+              case (sample, prior) =>
                 val unif = prior.asInstanceOf[Uniform]
                 unif.min + sample * (unif.max - unif.min)
-              }
             }
         }
       case Some(accepted) => (0 until nbSimusStep).map(_ => move(accepted))
@@ -105,9 +100,12 @@ trait Lenormand <: SequentialABC {
     summaryStats: Seq[Seq[Double]]): STATE = {
     val n_alpha = math.ceil(nbSimus * alpha).toInt
     // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
-    val varSummaryStats = previousState.varSummaryStats.getOrElse(
-      for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
-    )
+    val varSummaryStats =
+      previousState.varSummaryStats.getOrElse(
+        for {
+          col <- 0 until summaryStatsTarget.length
+        } yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
+      )
     // selecting the simulations
     val acceptedRaw =
       previousState.accepted match {
@@ -118,7 +116,9 @@ trait Lenormand <: SequentialABC {
           } yield WeightedSimulation(new Simulation(t, ss, distance(ss, varSummaryStats)), weight = 1 / thetas.length.toDouble)
         case Some(accepted) =>
           // following steps: computing distances and weights
-          val newSimulations = (for ((t, ss) <- (thetas, summaryStats).zipped) yield new Simulation(t, ss, distance(ss, previousState.varSummaryStats.get))).toSeq
+          val newSimulations =
+            (for ((t, ss) <- (thetas, summaryStats).zipped) yield Simulation(t, ss, distance(ss, previousState.varSummaryStats.get))).toSeq
+
           val weights = computeWeights(accepted, newSimulations)
           // keeping only new simulations under tolerance threshold
           val newAccepted =
@@ -155,16 +155,24 @@ trait Lenormand <: SequentialABC {
     analyse(priors, simulations, previousState, thetas, summaryStats)
   }
 
-  def computeWeights(simulations: Seq[Simulation], previousState: State, varSummaryStats: Seq[Double], thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]],
-    tolerance: Double, distanceFunction: Distance, priors: Seq[PriorFunction[Double]]): Seq[WeightedSimulation] = {
+  def computeWeights(
+    simulations: Seq[Simulation],
+    previousState: State,
+    varSummaryStats: Seq[Double],
+    thetas: Seq[Seq[Double]],
+    summaryStats: Seq[Seq[Double]],
+    tolerance: Double,
+    distanceFunction: Distance,
+    priors: Seq[PriorFunction[Double]]): Seq[WeightedSimulation] =
     previousState.accepted match {
       case None =>
         simulations.map(WeightedSimulation(_, weight = 1 / thetas.length.toDouble))
       case Some(accepted) =>
         val weights = computeWeights(accepted, simulations)
         val sumWeights = weights.sum
-        for ((s, w) <- simulations zip weights) yield WeightedSimulation(s, w / sumWeights)
+        for {
+          (s, w) <- simulations zip weights
+        } yield WeightedSimulation(s, w / sumWeights)
     }
-  }
 
 }
