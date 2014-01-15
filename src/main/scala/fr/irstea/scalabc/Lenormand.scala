@@ -93,7 +93,6 @@ trait Lenormand <: SequentialABC {
   }
 
   def analyse(
-    priors: Seq[PriorFunction[Double]],
     nbSimus: Int,
     previousState: LenormanState,
     thetas: Seq[Seq[Double]],
@@ -152,7 +151,7 @@ trait Lenormand <: SequentialABC {
     val thetas = sample(previousState, simulations)
     // running simulations
     val summaryStats = runSimulations(thetas)
-    analyse(priors, simulations, previousState, thetas, summaryStats)
+    analyse(simulations, previousState, thetas, summaryStats)
   }
 
   def computeWeights(
@@ -161,9 +160,7 @@ trait Lenormand <: SequentialABC {
     varSummaryStats: Seq[Double],
     thetas: Seq[Seq[Double]],
     summaryStats: Seq[Seq[Double]],
-    tolerance: Double,
-    distanceFunction: Distance,
-    priors: Seq[PriorFunction[Double]]): Seq[WeightedSimulation] =
+    tolerance: Double): Seq[WeightedSimulation] =
     previousState.accepted match {
       case None =>
         simulations.map(WeightedSimulation(_, weight = 1 / thetas.length.toDouble))
