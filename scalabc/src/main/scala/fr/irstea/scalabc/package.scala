@@ -19,7 +19,6 @@ package fr.irstea
 
 import scala.util.Random
 import org.apache.commons.math3.random.{ SynchronizedRandomGenerator, RandomAdaptor, RandomGenerator, RandomDataGenerator }
-import math._
 import breeze.linalg._
 import breeze.linalg.{ sum => msum }
 import breeze.numerics.sqrt
@@ -96,19 +95,16 @@ package object scalabc {
     for (i <- 0 until data.cols) {
       m(::, i) := m(::, i) :* weights
     }
-    val center = msum(m, Axis._0)
+    val center = msum(m, Axis._0).toDenseVector
     val x = DenseMatrix.zeros[Double](data.rows, data.cols)
     for (i <- 0 until x.rows) {
-      x(i, ::) := data(i, ::) :- center
+      x(i, ::) := data(i, ::) :- center.t
     }
     for (i <- 0 until x.cols) {
       x(::, i) := x(::, i) :* sqrt(weights)
     }
-    val square = breeze.generic.UFunc {
-      (d: Double) => math.pow(d, 2)
-    }
-    val w: DenseVector[Double] = square(weights)
-    (x.t * x) / (1 - w.sum)
+    val w: DenseVector[Double] = weights.map(math.pow(_, 2))
+    (x.t * x) / (1 - msum(w))
   }
 
   /**

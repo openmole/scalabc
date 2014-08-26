@@ -25,9 +25,9 @@ import org.apache.commons.math3.random.RandomGenerator
 import scala.Some
 import fr.irstea.scalabc.sampling.ParticleMover
 import breeze.stats.DescriptiveStats
-import breeze.linalg.{ pow => bpow, DenseVector }
-import breeze.numerics.{ exp => bexp }
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+import breeze.linalg.DenseVector
+import breeze.numerics.{ exp => bexp, pow => bpow  }
+import breeze.stats._
 import ABC._
 import scala.util.Random
 import fr.irstea.scalabc.executer.SequentialExecuter
@@ -60,7 +60,7 @@ trait Beaumont extends ABC {
     val nbParam = previouslyAccepted(0).simulation.theta.length
     val nbParticle = previouslyAccepted.length
     val nbNewParticle = newAccepted.length
-    val var_array = (0 until nbParam).map(col => 4 * DescriptiveStats.variance(previouslyAccepted.map(_.simulation.theta(col))))
+    val var_array = (0 until nbParam).map(col => 4 * variance(previouslyAccepted.map(_.simulation.theta(col))))
     val multi = var_array.foldLeft(math.pow(1 / math.sqrt(2 * math.Pi), nbParam))((s, t) => s * 1 / math.sqrt(t / 2))
     var weights = DenseVector.zeros[Double](nbNewParticle)
     for (i <- 0 until nbParticle) {

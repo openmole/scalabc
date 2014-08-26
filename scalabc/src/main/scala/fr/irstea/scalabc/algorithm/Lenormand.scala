@@ -65,7 +65,7 @@ trait Lenormand <: ABC {
       (for (rowPrevious <- 0 until previouslyAccepted.length) yield {
         // i
         val tmp = DenseVector((0 until nbParam).map(col => newAccepted(rowNew).theta(col) - previouslyAccepted(rowPrevious).simulation.theta(col)).toArray)
-        previouslyAccepted(rowPrevious).weight * math.exp(-(tmp.t * invmat * tmp).valueAt(0))
+        previouslyAccepted(rowPrevious).weight * math.exp(-(tmp.t * invmat * tmp)/*.valueAt(0)*/)
       }).sum
     }
     val tab_weight_prior = computeWeightsPrior(newAccepted, priors)

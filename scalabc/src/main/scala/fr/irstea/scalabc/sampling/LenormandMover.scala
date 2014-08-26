@@ -35,7 +35,7 @@ trait LenormandMover extends ParticleMover {
     val M = array2DToMatrix(simulations.map(_.simulation.theta))
     val V = diag(weightsVector)
     val Wt = DenseMatrix.eye[Double](simulations.length)
-    Wt(0, ::) := weightsVector
+    Wt(0, ::) := weightsVector.t
     val sumwt2 = weightsVector.toArray.foldLeft(0.0)(_ + math.pow(_, 2))
     val C = (M.t * V * M - (Wt * M).t * Wt * M) * (1 / (1 - sumwt2))
     val Cb = Array.fill(C.rows, C.rows)(0.0)

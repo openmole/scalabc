@@ -24,7 +24,7 @@ import org.apache.commons.math3.random.MersenneTwister
 import fr.irstea.scalabc.sampling.JabotMover
 import fr.irstea.scalabc.distance.DefaultDistance
 import fr.irstea.scalabc.prior.Uniform
-import fr.irstea.scalabc.algorithm.{Beaumont, WeightedSimulation, Simulation}
+import fr.irstea.scalabc.algorithm.{ Beaumont, WeightedSimulation, Simulation }
 
 @RunWith(classOf[JUnitRunner])
 class BeaumontTest extends FunSuite {
