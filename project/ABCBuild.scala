@@ -7,8 +7,8 @@ import scalariform.formatter.preferences._
 object ABCBuild extends Build {
 
    override def settings = super.settings ++ Seq (
-    scalaVersion := "2.11.1",
-    crossScalaVersions := Seq("2.10.4", "2.11.1")
+    scalaVersion := "2.11.2",
+    crossScalaVersions := Seq("2.10.4", "2.11.2")
   )
 
   lazy val defaultSettings =
@@ -18,14 +18,13 @@ object ABCBuild extends Build {
       ScalariformKeys.preferences.value
         .setPreference(AlignSingleLineCaseStatements, true)
         .setPreference(RewriteArrowSymbols, true),
-    organization := "fr.irstea",
+    organization := "fr.iscpif",
     resolvers += "ISC-PIF" at "http://maven.iscpif.fr/public/",
     publishTo <<= isSnapshot { snapshot =>
       val nexus = "https://oss.sonatype.org/"
       if (snapshot) Some("snapshots" at nexus + "content/repositories/snapshots")
       else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-    },
-    credentials += Credentials(Path.userHome / ".sbt" / "iscpif.credentials")
+    }
     )
 
   
