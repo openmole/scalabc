@@ -26,7 +26,7 @@ import scala.Some
 import fr.iscpif.scalabc.sampling.ParticleMover
 import breeze.stats.DescriptiveStats
 import breeze.linalg.DenseVector
-import breeze.numerics.{ exp => bexp, pow => bpow  }
+import breeze.numerics.{ exp ⇒ bexp, pow ⇒ bpow }
 import breeze.stats._
 import ABC._
 import scala.util.Random
@@ -60,12 +60,12 @@ trait Beaumont extends ABC {
     val nbParam = previouslyAccepted(0).simulation.theta.length
     val nbParticle = previouslyAccepted.length
     val nbNewParticle = newAccepted.length
-    val var_array = (0 until nbParam).map(col => 4 * variance(previouslyAccepted.map(_.simulation.theta(col))))
-    val multi = var_array.foldLeft(math.pow(1 / math.sqrt(2 * math.Pi), nbParam))((s, t) => s * 1 / math.sqrt(t / 2))
+    val var_array = (0 until nbParam).map(col ⇒ 4 * variance(previouslyAccepted.map(_.simulation.theta(col))))
+    val multi = var_array.foldLeft(math.pow(1 / math.sqrt(2 * math.Pi), nbParam))((s, t) ⇒ s * 1 / math.sqrt(t / 2))
     var weights = DenseVector.zeros[Double](nbNewParticle)
-    for (i <- 0 until nbParticle) {
+    for (i ← 0 until nbParticle) {
       var tab_temp = DenseVector.fill(nbNewParticle)(previouslyAccepted(i).weight * multi)
-      for (k <- 0 until nbParam) {
+      for (k ← 0 until nbParam) {
         val theta_i_k: Double = previouslyAccepted(i).simulation.theta(k)
         val tmp: DenseVector[Double] = DenseVector(newAccepted.map(_.theta(k) - theta_i_k).toArray)
         tab_temp = tab_temp :* bexp(-(tmp :* tmp) / var_array(k))
@@ -74,14 +74,14 @@ trait Beaumont extends ABC {
     }
     val tab_weight_prior = computeWeightsPrior(newAccepted, priors)
     (tab_weight_prior zip weights.data).map {
-      case (twp: Double, w: Double) => {
+      case (twp: Double, w: Double) ⇒ {
         twp / (w * weights.sum)
       }
     }
   }
 
   def selectSimulation(thetas: Seq[Seq[Double]], summaryStats: Seq[Seq[Double]], var_summaryStats: Seq[Double], tolerance: Double): Seq[Simulation] = {
-    val simus: Seq[Simulation] = for ((theta, summaryStat) <- thetas zip summaryStats) yield {
+    val simus: Seq[Simulation] = for ((theta, summaryStat) ← thetas zip summaryStats) yield {
       new Simulation(theta, summaryStat, distance = distance(summaryStat, var_summaryStats))
     }
     //simus.map(s => println(s.theta + " = " + s.summaryStats + " -> " + s.distance))
@@ -92,11 +92,11 @@ trait Beaumont extends ABC {
     previousState: BeaumontState,
     nbSimus: Int)(implicit rng: Random): Seq[Seq[Double]] =
     // sampling thetas
-    (0 until nbSimus).map(_ =>
+    (0 until nbSimus).map(_ ⇒
       previousState.accepted match {
-        case None =>
-          for (p <- priors) yield p.value
-        case Some(accepted) => move(accepted)
+        case None ⇒
+          for (p ← priors) yield p.value
+        case Some(accepted) ⇒ move(accepted)
       })
 
 }

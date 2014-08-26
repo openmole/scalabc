@@ -45,9 +45,9 @@ object ABC {
   def computeWeightsPrior(
     particles: Seq[Simulation],
     priors: Seq[PriorFunction]): Seq[Double] = {
-    for (particle <- particles.map(_.theta)) yield {
+    for (particle ← particles.map(_.theta)) yield {
       var res = 1.0
-      for ((param, prior) <- (particle, priors).zipped) {
+      for ((param, prior) ← (particle, priors).zipped) {
         res *= prior.density(param)
       }
       res

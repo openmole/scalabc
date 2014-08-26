@@ -20,13 +20,13 @@ package fr.iscpif
 import scala.util.Random
 import org.apache.commons.math3.random.{ SynchronizedRandomGenerator, RandomAdaptor, RandomGenerator, RandomDataGenerator }
 import breeze.linalg._
-import breeze.linalg.{ sum => msum }
+import breeze.linalg.{ sum ⇒ msum }
 import breeze.numerics.sqrt
 import fr.iscpif.scalabc.algorithm.WeightedSimulation
 
 package object scalabc {
   implicit class IteratorExtension[A](i: Iterator[A]) {
-    def takeWhileInclusive(p: A => Boolean) = {
+    def takeWhileInclusive(p: A ⇒ Boolean) = {
       val (a, b) = i.span(p)
       a ++ (if (b.hasNext) Some(b.next) else None)
     }
@@ -55,9 +55,9 @@ package object scalabc {
    */
   def pickTheta(thetas: Seq[WeightedSimulation])(implicit rng: Random): WeightedSimulation = {
     val rand = rng.nextDouble()
-    val sumWeights = thetas.foldLeft(0.0)((sum, t) => sum + t.weight)
+    val sumWeights = thetas.foldLeft(0.0)((sum, t) ⇒ sum + t.weight)
     var sum = 0.0
-    for (t <- thetas) {
+    for (t ← thetas) {
       sum += t.weight / sumWeights
       if (rand < sum)
         return t
@@ -67,7 +67,7 @@ package object scalabc {
 
   def array2DToMatrix(aa: Seq[Seq[Double]]): DenseMatrix[Double] = {
     val xx = DenseMatrix.ones[Double](aa.length, aa(0).length)
-    for (r <- 0 until aa.length; c <- 0 until aa(0).length) {
+    for (r ← 0 until aa.length; c ← 0 until aa(0).length) {
       xx(r, c) = aa(r)(c)
     }
     xx
@@ -75,7 +75,7 @@ package object scalabc {
 
   def matrixToArray2D(m: DenseMatrix[Double]): Array[Array[Double]] = {
     val aa = Array.fill(m.rows, m.cols)(0.0)
-    for (r <- 0 until m.rows; c <- 0 until m.cols) {
+    for (r ← 0 until m.rows; c ← 0 until m.cols) {
       aa(r).update(c, m(r, c))
     }
     aa
@@ -92,15 +92,15 @@ package object scalabc {
    */
   def covarianceWeighted(data: DenseMatrix[Double], weights: DenseVector[Double]) = {
     val m = data.copy
-    for (i <- 0 until data.cols) {
+    for (i ← 0 until data.cols) {
       m(::, i) := m(::, i) :* weights
     }
     val center = msum(m, Axis._0).toDenseVector
     val x = DenseMatrix.zeros[Double](data.rows, data.cols)
-    for (i <- 0 until x.rows) {
+    for (i ← 0 until x.rows) {
       x(i, ::) := data(i, ::) :- center.t
     }
-    for (i <- 0 until x.cols) {
+    for (i ← 0 until x.cols) {
       x(::, i) := x(::, i) :* sqrt(weights)
     }
     val w: DenseVector[Double] = weights.map(math.pow(_, 2))
@@ -117,9 +117,9 @@ package object scalabc {
   def lhs(nbSamples: Int, nbFactors: Int)(implicit rng: Random): Seq[Seq[Double]] = {
     val rdg = new RandomDataGenerator(rng)
     (0 until nbFactors).map {
-      _ =>
+      _ ⇒
         rdg.nextPermutation(nbSamples, nbSamples).map {
-          i => (i + rng.nextDouble()) / nbSamples
+          i ⇒ (i + rng.nextDouble()) / nbSamples
         }.toSeq
     }.transpose
   }

@@ -36,10 +36,10 @@ trait BeaumontExecuter <: Beaumont with SequentialExecuter {
       val summaryStats = runSimulations(thetas)
       // determination of the normalization constants in each dimension associated to each summary statistic, this normalization will not change during all the algorithm
       varSummaryStats = previousState.varSummaryStats.getOrElse(
-        for (col <- 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
+        for (col ← 0 until summaryStatsTarget.length) yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
       )
       // selecting the tolerable simulations
-      for (s <- selectSimulation(thetas, summaryStats, varSummaryStats, previousState.tolerance)) {
+      for (s ← selectSimulation(thetas, summaryStats, varSummaryStats, previousState.tolerance)) {
         newAccepted += s
       }
       nbSimulated += thetas.length
@@ -47,10 +47,10 @@ trait BeaumontExecuter <: Beaumont with SequentialExecuter {
     // compute weights
     val weights: Seq[Double] =
       previousState.accepted match {
-        case None =>
+        case None ⇒
           // initial step
           Array.fill(simulations)(1 / simulations.toDouble)
-        case Some(accepted) =>
+        case Some(accepted) ⇒
           // following steps
           computeWeights(accepted, newAccepted)
       }
@@ -59,7 +59,7 @@ trait BeaumontExecuter <: Beaumont with SequentialExecuter {
     BeaumontState(
       previousState.iteration + 1,
       previousState.toleranceIndex + 1,
-      Some(for ((s, w) <- newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)),
+      Some(for ((s, w) ← newAccepted zip weights) yield WeightedSimulation(s, w / sumWeights)),
       Some(varSummaryStats),
       nbSimulated,
       previousState.evaluations + nbSimulated

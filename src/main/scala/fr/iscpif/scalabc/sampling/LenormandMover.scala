@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2013 Nicolas Dumoulin <nicolas.dumoulin@irstea.fr>
  *
@@ -20,26 +19,33 @@ package fr.iscpif.scalabc.sampling
 
 import fr.iscpif.scalabc._
 import breeze.linalg._
-import breeze.numerics
+import org.apache.commons.math3.distribution.MultivariateNormalDistribution
 import scala.util.Random
-import org.apache.commons.math3.random.RandomDataGenerator
 import fr.iscpif.scalabc.algorithm.WeightedSimulation
 
-trait JabotMover extends ParticleMover {
+trait LenormandMover extends ParticleMover {
+
   /**
-   * Implementation based on those from Jabot in EasyABC R scalabc
-   * @param simulations
-   * @param rng
-   * @return
+   * implementation based on the the implementation of Lenormand
+   * TODO seems to not working
    */
-  // TODO add the option for keeping the particle inside the priors
   def move(simulations: Seq[WeightedSimulation])(implicit rng: Random): Seq[Double] = {
-    val sd: DenseVector[Double] = diag(covarianceWeighted(array2DToMatrix(simulations.map(_.simulation.theta)), DenseVector((for (s <- simulations) yield s.weight).toArray))) * 2.0
-    val sd2: DenseVector[Double] = numerics.sqrt(sd)
-    val paramPicked = pickTheta(simulations).simulation.theta
-    val rdg = new RandomDataGenerator(rng)
-    (paramPicked zip sd2.data).map {
-      case (p, s) => rdg.nextGaussian(p, s)
+    val weightsVector = DenseVector((for (s ← simulations) yield s.weight).toArray)
+    val thetas = simulations.map(_.simulation.theta)
+    val M = array2DToMatrix(simulations.map(_.simulation.theta))
+    val V = diag(weightsVector)
+    val Wt = DenseMatrix.eye[Double](simulations.length)
+    Wt(0, ::) := weightsVector.t
+    val sumwt2 = weightsVector.toArray.foldLeft(0.0)(_ + math.pow(_, 2))
+    val C = (M.t * V * M - (Wt * M).t * Wt * M) * (1 / (1 - sumwt2))
+    val Cb = Array.fill(C.rows, C.rows)(0.0)
+    for (r ← 0 until C.rows) {
+      Cb(r).update(r, C(r, r))
     }
+
+    val dist = new MultivariateNormalDistribution(rng, pickTheta(simulations).simulation.theta.toArray, Cb)
+    // TODO check if in bounds?
+    dist.sample()
   }
+
 }

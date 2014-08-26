@@ -60,17 +60,17 @@ trait Lenormand <: ABC {
     val covmat: DenseMatrix[Double] = covariance(array2DToMatrix(previouslyAccepted.map(_.simulation.theta))) :* 2.0
     val multi = math.exp(-0.5 * nbParam * math.log(2 * math.Pi)) / math.sqrt(math.abs(det(covmat)))
     val invmat = inv(covmat) :* 0.5
-    val weights = for (rowNew <- 0 until newAccepted.length) yield {
+    val weights = for (rowNew ← 0 until newAccepted.length) yield {
       // k
-      (for (rowPrevious <- 0 until previouslyAccepted.length) yield {
+      (for (rowPrevious ← 0 until previouslyAccepted.length) yield {
         // i
-        val tmp = DenseVector((0 until nbParam).map(col => newAccepted(rowNew).theta(col) - previouslyAccepted(rowPrevious).simulation.theta(col)).toArray)
-        previouslyAccepted(rowPrevious).weight * math.exp(-(tmp.t * invmat * tmp)/*.valueAt(0)*/)
+        val tmp = DenseVector((0 until nbParam).map(col ⇒ newAccepted(rowNew).theta(col) - previouslyAccepted(rowPrevious).simulation.theta(col)).toArray)
+        previouslyAccepted(rowPrevious).weight * math.exp(-(tmp.t * invmat * tmp) /*.valueAt(0)*/ )
       }).sum
     }
     val tab_weight_prior = computeWeightsPrior(newAccepted, priors)
     (tab_weight_prior zip weights).map {
-      case (twp: Double, w: Double) => twp / (w * multi)
+      case (twp: Double, w: Double) ⇒ twp / (w * multi)
     }
   }
 
@@ -80,15 +80,15 @@ trait Lenormand <: ABC {
     val nbSimusStep = if (previousState.accepted == None) simulations else simulations - n_alpha
 
     previousState.accepted match {
-      case None =>
+      case None ⇒
         lhs(nbSimusStep, priors.length).map {
-          row =>
+          row ⇒
             (row zip priors).map {
-              case (sample, prior) =>
+              case (sample, prior) ⇒
                 prior.min + sample * (prior.max - prior.min)
             }
         }
-      case Some(accepted) => (0 until nbSimusStep).map(_ => move(accepted))
+      case Some(accepted) ⇒ (0 until nbSimusStep).map(_ ⇒ move(accepted))
     }
   }
 
@@ -101,27 +101,27 @@ trait Lenormand <: ABC {
     val varSummaryStats =
       previousState.varSummaryStats.getOrElse(
         for {
-          col <- 0 until summaryStatsTarget.length
+          col ← 0 until summaryStatsTarget.length
         } yield math.min(1.0, 1 / new DescriptiveStatistics(summaryStats.map(_(col)).toArray).getVariance)
       )
     // selecting the simulations
     val acceptedRaw =
       previousState.accepted match {
-        case None =>
+        case None ⇒
           // initial step: all simulations are kept
           for {
-            (t, ss) <- thetas zip summaryStats
+            (t, ss) ← thetas zip summaryStats
           } yield WeightedSimulation(Simulation(t, ss, distance(ss, varSummaryStats)), weight = 1 / thetas.length.toDouble)
-        case Some(accepted) =>
+        case Some(accepted) ⇒
           // following steps: computing distances and weights
           val newSimulations =
-            (for ((t, ss) <- (thetas, summaryStats).zipped) yield Simulation(t, ss, distance(ss, previousState.varSummaryStats.get))).toSeq
+            (for ((t, ss) ← (thetas, summaryStats).zipped) yield Simulation(t, ss, distance(ss, previousState.varSummaryStats.get))).toSeq
 
           val weights = computeWeights(accepted, newSimulations)
           // keeping only new simulations under tolerance threshold
           val newAccepted =
             for {
-              (s, w) <- newSimulations zip weights
+              (s, w) ← newSimulations zip weights
               if s.distance <= previousState.tolerance
             } yield WeightedSimulation(s, w / weights.sum)
           accepted ++ newAccepted
@@ -131,8 +131,8 @@ trait Lenormand <: ABC {
     val nextTolerance = accepted.last.simulation.distance
     val proportionOfAccepted =
       previousState.accepted match {
-        case None => previousState.proportionOfAccepted
-        case Some(previous) => (acceptedRaw.length - previous.length).toDouble / thetas.length
+        case None           ⇒ previousState.proportionOfAccepted
+        case Some(previous) ⇒ (acceptedRaw.length - previous.length).toDouble / thetas.length
       }
     LenormanState(
       previousState.iteration + 1,
@@ -153,13 +153,13 @@ trait Lenormand <: ABC {
     summaryStats: Seq[Seq[Double]],
     tolerance: Double): Seq[WeightedSimulation] =
     previousState.accepted match {
-      case None =>
+      case None ⇒
         simulations.map(WeightedSimulation(_, weight = 1 / thetas.length.toDouble))
-      case Some(accepted) =>
+      case Some(accepted) ⇒
         val weights = computeWeights(accepted, simulations)
         val sumWeights = weights.sum
         for {
-          (s, w) <- simulations zip weights
+          (s, w) ← simulations zip weights
         } yield WeightedSimulation(s, w / sumWeights)
     }
 

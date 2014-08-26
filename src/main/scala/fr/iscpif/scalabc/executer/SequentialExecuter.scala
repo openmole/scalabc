@@ -31,6 +31,6 @@ trait SequentialExecuter <: ABC with Model {
 
   def runSimulations(thetas: Seq[Seq[Double]])(implicit rng: Random): Seq[Seq[Double]] =
     (thetas.iterator zip Iterator.continually(rng.nextLong())).toSeq.map {
-      case (theta, seed) => model(theta, seed)
+      case (theta, seed) ⇒ model(theta, seed)
     }
 }

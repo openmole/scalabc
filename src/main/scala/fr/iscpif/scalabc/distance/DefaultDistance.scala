@@ -20,7 +20,7 @@ trait DefaultDistance <: Distance {
 
   def distance(summaryStats: Seq[Double], initVariance: Seq[Double]): Double = {
     (initVariance, summaryStats, summaryStatsTarget).zipped.map {
-      case (v, ss, sst) => v * (ss - sst) * (ss - sst)
+      case (v, ss, sst) ⇒ v * (ss - sst) * (ss - sst)
     }.sum
   }
 }
