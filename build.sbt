@@ -13,7 +13,7 @@ ScalariformKeys.preferences :=
   
 organization := "fr.iscpif"
 
-name := "abc"
+name := "scalabc"
 
 resolvers += "ISC-PIF" at "http://maven.iscpif.fr/public/"
 
