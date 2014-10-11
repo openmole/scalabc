@@ -29,3 +29,26 @@ libraryDependencies += "org.scalanlp" %% "breeze" % "0.9"
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.3"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+
+pomIncludeRepository := { _ => false }
+
+licenses := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
+
+homepage := Some(url("https://github.com/openmole/scalabc"))
+
+scmInfo := Some(ScmInfo(url("https://github.com/openmole/mgo.git"), "scm:git:git@github.com:openmole/mgo.git"))
+
+pomExtra := (
+  <developers>
+    <developer>
+      <id>romainreuillon</id>
+      <name>Romain Reuillon</name>
+    </developer>
+    <developer>
+      <id>guillaumecherel</id>
+      <name>Guillaume Cherel</name>
+    </developer>
+  </developers>
+)
+
+
